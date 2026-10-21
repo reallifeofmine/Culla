@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { Culla, toAnalysis, toMedia } from './native';
+import type { RawAnalysis } from '../../modules/culla-native';
 import { flags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
 import { persist } from './persist';
 
@@ -118,11 +119,13 @@ export function startScan() {
       const batch = todo.slice(i, i + BATCH).filter(m => state.byId.has(m.id));
       if (!batch.length) continue;
       try {
-        const res = await Culla.analyze(batch.map(m => m.id), batch.map(m => /screenshot/i.test(m.path + m.bucket)));
+        const res: RawAnalysis[] = JSON.parse(await Culla.analyze(batch.map(m => m.id), batch.map(m => /screenshot/i.test(m.path + m.bucket))));
         const ok: [string, Analysis][] = [];
+        let firstError: string | null = null;
         for (const r of res) {
           const m = state.byId.get(r.id);
-          if (!m || r.error) continue;
+          if (r.error) { firstError ??= r.error; console.error('Culla analyze', r.id, r.error); continue; }
+          if (!m) continue;
           m.a = toAnalysis(r);
           saved?.set(r.id, m.a);
           ok.push([r.id, m.a]);
@@ -130,13 +133,15 @@ export function startScan() {
         await persist.save(ok);
         state.analysed += ok.length;
         failedBatches = ok.length ? 0 : failedBatches + 1;
+        if (!ok.length && firstError) state.scanError = `Some photos couldn’t be checked. Please send a screenshot of this. (${firstError.slice(0, 400)})`;
         if (state.scanError && ok.length) state.scanError = null;
         emit();
         derive();
       } catch (e) {
+        console.error('Culla analyze batch', e);
         failedBatches++;
         if (failedBatches >= 5) {
-          set({ scanError: `Culla couldn’t check your photos. Please send a screenshot of this. (${String((e as Error)?.message ?? e).slice(0, 160)})` });
+          set({ scanError: `Culla couldn’t check your photos. Please send a screenshot of this. (${String((e as Error)?.message ?? e).slice(0, 600)})` });
           break;
         }
       }

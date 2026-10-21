@@ -18,49 +18,28 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
+        with: { node-version: 22, cache: npm }
       - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
+        with: { distribution: temurin, java-version: 17 }
       - name: Install
         run: npm ci
-
       - name: Typecheck and unit tests
+        shell: bash -o pipefail {0}
         run: |
           npx tsc --noEmit 2>&1 | tee -a build.log
           npm test 2>&1 | tee -a build.log
-        shell: bash -o pipefail {0}
-
       - name: Generate native project
+        shell: bash -o pipefail {0}
+        env: { CULLA_BUILD: "${{ github.run_number }}" }
         run: npx expo prebuild --platform android --no-install 2>&1 | tee -a build.log
-        shell: bash -o pipefail {0}
-        env:
-          CULLA_BUILD: ${{ github.run_number }}
-
-      - name: Build APK
+      - name: Build APK (phones)
         working-directory: android
-        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain 2>&1 | tee -a ../build.log
         shell: bash -o pipefail {0}
-        env:
-          CULLA_BUILD: ${{ github.run_number }}
-
-      - name: Publish release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v${VERSION}-build${{ github.run_number }}"
-          cp android/app/build/outputs/apk/release/app-release.apk culla.apk
-          gh release create "$TAG" culla.apk --title "Culla $VERSION (build ${{ github.run_number }})" \
-            --notes "Install: open this page on your Android phone and tap culla.apk." --latest
-
+        env: { CULLA_BUILD: "${{ github.run_number }}" }
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --console=plain 2>&1 | tee -a ../build.log
+      - uses: actions/upload-artifact@v4
+        with: { name: apk, path: android/app/build/outputs/apk/release/app-release.apk }
       - name: Save failure log
         if: failure()
         run: |
@@ -73,3 +52,65 @@ jobs:
           git add build.log info.txt
           git commit -m "CI log for run ${{ github.run_number }}"
           git push -f origin ci-logs
+
+  # Runs the real app on an emulator with test photos; a release is only published if this passes.
+  emulator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+        env: { CULLA_BUILD: "${{ github.run_number }}" }
+      - name: Build APK (emulator)
+        working-directory: android
+        env: { CULLA_BUILD: "${{ github.run_number }}" }
+        run: ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon --console=plain
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash tests/emulator-smoke.sh android/app/build/outputs/apk/release/app-release.apk
+      - name: Save emulator results
+        if: always()
+        run: |
+          git config user.name "ci"; git config user.email "ci@users.noreply.github.com"
+          mkdir -p /tmp/smoke && cp -r smoke/. /tmp/smoke/ 2>/dev/null || true
+          git checkout --orphan smoke-logs
+          git rm -rf --cached . > /dev/null
+          rm -rf smoke-out && mkdir smoke-out && cp -r /tmp/smoke/. smoke-out/ 2>/dev/null || true
+          echo "run ${{ github.run_number }} commit ${{ github.sha }}" > smoke-out/info.txt
+          git add -f smoke-out
+          git commit -m "Emulator results for run ${{ github.run_number }}"
+          git push -f origin smoke-logs
+
+  release:
+    needs: [build, emulator]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: apk }
+      - name: Publish release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}-build${{ github.run_number }}"
+          mv app-release.apk culla.apk
+          gh release create "$TAG" culla.apk --title "Culla $VERSION (build ${{ github.run_number }})" \
+            --notes "Install: open this page on your Android phone and tap culla.apk." --latest

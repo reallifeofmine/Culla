@@ -66,7 +66,7 @@ class Analyzer(private val context: Context) {
         try {
           analyze(uris[i], readText.getOrElse(i) { false }) + ("id" to ids[i])
         } catch (e: Throwable) {
-          mapOf("id" to ids[i], "error" to (e.message ?: e.javaClass.simpleName))
+          mapOf("id" to ids[i], "error" to e.stackTraceToString().take(800))
         }
       })
     }

@@ -5,7 +5,8 @@ declare class CullaNativeModule extends NativeModule<{}> {
   getAccess(): Access;
   requestAccess(): Promise<Access>;
   listMedia(trashed: boolean): Promise<MediaColumns>;
-  analyze(ids: string[], readText: boolean[]): Promise<RawAnalysis[]>;
+  /** JSON array of RawAnalysis. */
+  analyze(ids: string[], readText: boolean[]): Promise<string>;
   readText(id: string): Promise<string | null>;
   /** Shows Android's confirmation; resolves true if the user agreed. */
   trash(ids: string[]): Promise<boolean>;

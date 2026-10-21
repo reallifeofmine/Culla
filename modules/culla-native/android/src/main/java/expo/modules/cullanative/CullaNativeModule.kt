@@ -16,6 +16,8 @@ import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.util.concurrent.Executors
+import org.json.JSONArray
+import org.json.JSONObject
 
 class CullaNativeModule : Module() {
   private val context: Context
@@ -55,7 +57,7 @@ class CullaNativeModule : Module() {
       try {
         promise.resolve(clean(work()))
       } catch (e: Throwable) {
-        promise.reject("E_CULLA", e.message ?: e.javaClass.simpleName, e)
+        promise.reject("E_CULLA", e.stackTraceToString().take(1500), e)
       }
     }
   }
@@ -95,11 +97,13 @@ class CullaNativeModule : Module() {
 
     // Analysis has its own thread pool inside Analyzer; this thread only waits for the batch.
     AsyncFunction("analyze") { ids: List<String>, readText: List<Boolean>, promise: Promise ->
+      // Results go back as one JSON string: plain strings are the most reliable way across the bridge.
       Thread {
         try {
-          promise.resolve(clean(analyzer.analyzeBatch(ids, readText)))
+          val results = analyzer.analyzeBatch(ids, readText)
+          promise.resolve(JSONArray(results.map { JSONObject(it) }).toString())
         } catch (e: Throwable) {
-          promise.reject("E_ANALYZE", e.message, e)
+          promise.reject("E_ANALYZE", e.stackTraceToString().take(1500), e)
         }
       }.start()
     }

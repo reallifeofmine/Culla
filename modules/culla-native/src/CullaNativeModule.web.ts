@@ -111,9 +111,9 @@ class CullaNativeModule extends NativeModule<{}> {
 
   async listMedia(trashed: boolean) { return this.cols(trashed ? this.bin : this.items); }
 
-  async analyze(ids: string[]): Promise<RawAnalysis[]> {
+  async analyze(ids: string[]): Promise<string> {
     await new Promise(r => setTimeout(r, 40));
-    return ids.map(id => ({ id, ...this.items.find(f => f.id === id)!.a }));
+    return JSON.stringify(ids.map(id => ({ id, ...this.items.find(f => f.id === id)!.a })));
   }
 
   async readText() { return null; }
