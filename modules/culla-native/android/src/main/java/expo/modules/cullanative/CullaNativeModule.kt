@@ -39,11 +39,21 @@ class CullaNativeModule : Module() {
     return "none"
   }
 
+  /**
+   * Expo's converter throws on null values inside maps and lists (getClass() on null), so empty
+   * values are left out and JS treats a missing key as null.
+   */
+  private fun clean(v: Any?): Any? = when (v) {
+    is Map<*, *> -> v.entries.filter { it.value != null }.associate { it.key.toString() to clean(it.value) }
+    is List<*> -> v.filterNotNull().map { clean(it) }
+    else -> v
+  }
+
   /** Runs work off the JS queue and settles the promise when done. */
   private fun background(promise: Promise, work: () -> Any?) {
     io.execute {
       try {
-        promise.resolve(work())
+        promise.resolve(clean(work()))
       } catch (e: Throwable) {
         promise.reject("E_CULLA", e.message ?: e.javaClass.simpleName, e)
       }
@@ -87,7 +97,7 @@ class CullaNativeModule : Module() {
     AsyncFunction("analyze") { ids: List<String>, readText: List<Boolean>, promise: Promise ->
       Thread {
         try {
-          promise.resolve(analyzer.analyzeBatch(ids, readText))
+          promise.resolve(clean(analyzer.analyzeBatch(ids, readText)))
         } catch (e: Throwable) {
           promise.reject("E_ANALYZE", e.message, e)
         }
@@ -95,7 +105,7 @@ class CullaNativeModule : Module() {
     }
 
     AsyncFunction("readText") { id: String, promise: Promise ->
-      background(promise) { analyzer.readText(uris(listOf(id)).first()) }
+      background(promise) { analyzer.readText(uris(listOf(id)).first()) ?: "" }
     }
 
     AsyncFunction("trash") { ids: List<String>, promise: Promise ->

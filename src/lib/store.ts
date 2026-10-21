@@ -111,7 +111,8 @@ export function startScan() {
   const token = ++scanToken;
   set({ scanning: true, paused: false, scanError: null });
   (async () => {
-    let errors = 0;
+    // A photo that can't be read is skipped; only repeated whole-batch failures stop the check.
+    let failedBatches = 0;
     for (let i = 0; i < todo.length; i += BATCH) {
       if (token !== scanToken || state.paused) break;
       const batch = todo.slice(i, i + BATCH).filter(m => state.byId.has(m.id));
@@ -121,19 +122,23 @@ export function startScan() {
         const ok: [string, Analysis][] = [];
         for (const r of res) {
           const m = state.byId.get(r.id);
-          if (!m) continue;
-          if (r.error) { errors++; continue; }
+          if (!m || r.error) continue;
           m.a = toAnalysis(r);
           saved?.set(r.id, m.a);
           ok.push([r.id, m.a]);
         }
         await persist.save(ok);
         state.analysed += ok.length;
+        failedBatches = ok.length ? 0 : failedBatches + 1;
+        if (state.scanError && ok.length) state.scanError = null;
         emit();
         derive();
       } catch (e) {
-        errors++;
-        if (errors > 20) { set({ scanError: String((e as Error)?.message ?? e) }); break; }
+        failedBatches++;
+        if (failedBatches >= 5) {
+          set({ scanError: `Culla couldn’t check your photos. Please send a screenshot of this. (${String((e as Error)?.message ?? e).slice(0, 160)})` });
+          break;
+        }
       }
     }
     if (token === scanToken) set({ scanning: false });

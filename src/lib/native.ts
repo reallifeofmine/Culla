@@ -16,10 +16,12 @@ export function toMedia(c: MediaColumns): (Media & { expires: number; name: stri
   return out;
 }
 
+// The native side leaves out empty values, so every optional field is defaulted here.
 export function toAnalysis(r: RawAnalysis): Analysis {
   return {
-    sharp: r.sharp, noise: r.noise, lum: r.lum, std: r.std, clipLow: r.clipLow, clipHigh: r.clipHigh,
-    entropy: r.entropy, colour: r.colour, hash: r.hash, emb: r.emb, faces: r.faces, labels: r.labels,
-    text: r.text, lat: r.lat, lon: r.lon,
+    sharp: r.sharp ?? 0, noise: r.noise ?? 0, lum: r.lum ?? 0, std: r.std ?? 0, clipLow: r.clipLow ?? 0, clipHigh: r.clipHigh ?? 0,
+    entropy: r.entropy ?? 0, colour: r.colour ?? 0, hash: r.hash ?? '0000000000000000', emb: r.emb ?? null,
+    faces: (r.faces ?? []).map(f => ({ x: f.x, y: f.y, w: f.w, h: f.h, leftEye: f.leftEye ?? null, rightEye: f.rightEye ?? null, smile: f.smile ?? null, sharp: f.sharp ?? 0 })),
+    labels: r.labels ?? [], text: r.text || null, lat: r.lat ?? null, lon: r.lon ?? null,
   };
 }
