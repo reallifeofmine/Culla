@@ -8,6 +8,12 @@ OUT=smoke
 PKG=com.reallifeofmine.culla
 mkdir -p "$OUT"
 
+# Let the emulator settle so system apps don't throw "not responding" dialogs over ours.
+adb wait-for-device
+until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
+sleep 30
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS > /dev/null
+
 adb install -r -g "$APK"
 adb shell mkdir -p /sdcard/DCIM/Camera
 for f in tests/fixtures/*.jpg; do adb push "$f" /sdcard/DCIM/Camera/; done
@@ -38,6 +44,11 @@ for m in re.finditer(r'text="([^"]*)"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]
 PY
 }
 
+# Dismiss any system "isn't responding" dialog (tap Wait) and bring Culla back to the front.
+for i in 1 2 3; do
+  ui front
+  if grep -q "isn.t responding" "$OUT/front.xml"; then tap front '^Wait$'; sleep 3; adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1; sleep 10; else break; fi
+done
 adb exec-out screencap -p > "$OUT/1-dashboard.png"
 ui dashboard; text dashboard > "$OUT/1-dashboard.txt"
 tap dashboard '^Similar shots$'; sleep 4
@@ -59,7 +70,10 @@ echo "---- dashboard ----"; cat "$OUT/1-dashboard.txt"
 echo "---- similar ----"; cat "$OUT/2-similar.txt"
 fail=0
 grep -q "FATAL EXCEPTION" "$OUT/logcat-full.txt" && { echo "App crashed"; fail=1; }
+grep -q "Culla analyze" "$OUT/logcat.txt" && { echo "Analysis errors in the log"; fail=1; }
+grep -q "^Clean up$" "$OUT/1-dashboard.txt" || { echo "Culla's screen was not visible"; fail=1; }
 grep -qi "couldn.t check\|couldn.t be checked" "$OUT/1-dashboard.txt" && { echo "Check reported an error"; fail=1; }
-grep -q " / " "$OUT/1-dashboard.txt" && grep -q "^0 / " "$OUT/1-dashboard.txt" && { echo "Nothing was checked"; fail=1; }
+grep -q "^0 / " "$OUT/1-dashboard.txt" && { echo "Nothing was checked"; fail=1; }
+grep -q "^Similar shots$" "$OUT/2-similar.txt" || grep -q "Set 1 of" "$OUT/3-set.txt" || { echo "No similar set found for the burst"; fail=1; }
 echo "smoke result: $([ $fail = 0 ] && echo PASS || echo FAIL)" | tee "$OUT/result.txt"
 exit $fail
