@@ -104,3 +104,17 @@ test('different shapes never group (screenshot vs camera photo)', () => {
   const shot = media(base({ emb: enc(jitter(v, 4, 1)), hash: '1234123412341234' }), { taken: t0 + 5000, w: 1080, h: 2340, bucket: 'Screenshots' });
   assert.equal(groupSimilar([photo, shot]).length, 0);
 });
+
+test('a blurred frame in the middle of a burst does not split it', () => {
+  // Explicit geometry from the emulator run: the blurred frame still resembles the first shot
+  // (0.76) but not the shot after it (~0.46), which does resemble the first two (0.91).
+  const t0 = Date.UTC(2026, 5, 4, 10);
+  const vec = (a: number, b: number, c: number) => { const v = new Array(64).fill(0); v[0] = a; v[1] = b; v[2] = c; return v; };
+  const embs = [vec(100, 0, 0), vec(100, 0, 5), vec(100, 85, 0), vec(100, -40, 20)];
+  const shots = embs.map((e, i) => media(base({ emb: enc(e), hash: ((i + 7) * 2654435761 >>> 0).toString(16).padStart(8, '0').repeat(2), sharp: i === 2 ? 9 : 600 }), { taken: t0 + i * 3000 }));
+  const c = (x: number, y: number) => cosine(decodeEmbedding(enc(embs[x])), decodeEmbedding(enc(embs[y])));
+  assert.ok(c(0, 2) > 0.72 && c(2, 3) < 0.72 && c(0, 3) > 0.9, 'fixture geometry');
+  const g = groupSimilar(shots);
+  assert.equal(g.length, 1);
+  assert.equal(g[0].ids.length, 4);
+});

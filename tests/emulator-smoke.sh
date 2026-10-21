@@ -81,7 +81,10 @@ python3 - "$OUT/1-dashboard.txt" <<'PY' || { echo "No similar set found for the 
 import sys
 lines = [l.strip() for l in open(sys.argv[1], encoding='utf-8') if l.strip()]
 i = lines.index('Similar shots') if 'Similar shots' in lines else -1
-sys.exit(0 if i >= 0 and i + 1 < len(lines) and lines[i + 1] != 'Nothing found' else 1)
+# Fixtures: a 4-shot burst (one blurred) and a grainy copy of the coffee photo → 2 sets, 4 extra photos.
+ok = i >= 0 and i + 2 < len(lines) and lines[i + 1].startswith('2 sets') and lines[i + 2] == '4'
+print('similar:', lines[i + 1:i + 3] if i >= 0 else None)
+sys.exit(0 if ok else 1)
 PY
 echo "---- analysis log ----"; grep -E "Culla" "$OUT/logcat-full.txt" | grep -E "analysed|Similarity|analyze" | head -30
 echo "smoke result: $([ $fail = 0 ] && echo PASS || echo FAIL)" | tee "$OUT/result.txt"

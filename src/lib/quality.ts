@@ -167,8 +167,10 @@ function buildGroups(items: Item[]): Group[] {
     let target: Open | null = null;
     for (let k = open.length - 1; k >= Math.max(0, open.length - 4) && !target; k--) {
       const g = open[k];
-      const gap = it.m.taken - g.last.m.taken;
-      if (similarEnough(it, g.last, gap) && similarEnough(it, g.first, it.m.taken - g.first.m.taken)) target = g;
+      // Must resemble the set's first photo (limits drift) and one of its last three (so a single
+      // blurred frame in the middle of a burst doesn't split it).
+      if (similarEnough(it, g.first, it.m.taken - g.first.m.taken) &&
+        g.members.slice(-3).some(m => similarEnough(it, m, it.m.taken - m.m.taken))) target = g;
     }
     if (target) { target.members.push(it); target.last = it; }
     else { const g = { first: it, last: it, members: [it] }; open.push(g); all.push(g); }
