@@ -140,7 +140,7 @@ function similarEnough(p: Item, q: Item, gapMs: number): boolean {
   if (!p.emb || !q.emb) return false;
   const c = cosine(p.emb, q.emb);
   // Burst-close shots may differ more (people moving); shots further apart must look closer.
-  const need = gapMs <= 60_000 ? 0.8 : gapMs <= 10 * 60_000 ? 0.86 : 0.93;
+  const need = gapMs <= 60_000 ? 0.72 : gapMs <= 10 * 60_000 ? 0.86 : 0.93;
   return c >= need;
 }
 

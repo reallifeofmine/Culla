@@ -35,7 +35,7 @@ Everything runs on the phone; nothing is uploaded.
   (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
 - Eyes closed: any face ≥ 6 % of width with min(eye-open) < 0.2.
 - Similar sets: sorted by time, 30-min window; join if similar to the set's first AND latest photo
-  (prevents chaining); cosine ≥ 0.80 within 1 min, 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;
+  (prevents chaining); cosine ≥ 0.72 within 1 min (a blurred burst shot measured 0.76), 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;
   shapes (aspect ratio) must match. Exact duplicates (same dHash) join across any time (WhatsApp copies).
 - Best pick = keepScore (eyes, smile, face sharpness, sharpness, exposure, noise). Everything else pre-ticked.
 - Scan order: newest first, batches of 6, saved to SQLite (`culla.db`) so nothing is analysed twice.

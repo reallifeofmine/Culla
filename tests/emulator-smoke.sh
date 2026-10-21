@@ -23,7 +23,10 @@ done
 sleep 8
 adb shell content query --uri content://media/external/images/media --projection _display_name:relative_path > "$OUT/mediastore.txt" || true
 
+adb logcat -G 16M || true
 adb logcat -c
+adb logcat -v time > "$OUT/logcat-full.txt" 2>&1 &
+LOGPID=$!
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
 sleep 90
 
@@ -62,7 +65,7 @@ ui home2; tap home2 '^Albums$'; sleep 4
 adb exec-out screencap -p > "$OUT/4-albums.png"
 ui albums; text albums > "$OUT/4-albums.txt"
 
-adb logcat -d > "$OUT/logcat-full.txt"
+kill $LOGPID 2>/dev/null; sleep 1
 grep -E "AndroidRuntime|ReactNativeJS|Culla|FATAL|CullaNative|mlkit|mediapipe" "$OUT/logcat-full.txt" | tail -400 > "$OUT/logcat.txt"
 
 set +x
@@ -80,6 +83,6 @@ lines = [l.strip() for l in open(sys.argv[1], encoding='utf-8') if l.strip()]
 i = lines.index('Similar shots') if 'Similar shots' in lines else -1
 sys.exit(0 if i >= 0 and i + 1 < len(lines) and lines[i + 1] != 'Nothing found' else 1)
 PY
-echo "---- analysis log ----"; grep -E " Culla *:" "$OUT/logcat-full.txt" | head -30
+echo "---- analysis log ----"; grep -E "Culla" "$OUT/logcat-full.txt" | grep -E "analysed|Similarity|analyze" | head -30
 echo "smoke result: $([ $fail = 0 ] && echo PASS || echo FAIL)" | tee "$OUT/result.txt"
 exit $fail
