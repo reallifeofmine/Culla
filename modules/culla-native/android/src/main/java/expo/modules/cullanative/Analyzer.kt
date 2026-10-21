@@ -11,9 +11,6 @@ import android.util.Log
 import android.util.Size
 import androidx.exifinterface.media.ExifInterface
 import com.google.android.gms.tasks.Tasks
-import com.google.mediapipe.framework.image.BitmapImageBuilder
-import com.google.mediapipe.tasks.core.BaseOptions
-import com.google.mediapipe.tasks.vision.imageembedder.ImageEmbedder
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
@@ -21,13 +18,20 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import org.tensorflow.lite.Interpreter
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.channels.FileChannel
 import java.util.concurrent.Callable
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
  * On-device photo analysis. Everything runs on the phone: ML Kit for faces, eyes, smiles,
- * labels and text; MediaPipe for the similarity embedding; ImageMetrics for blur, noise
+ * labels and text; TensorFlow Lite (MobileNetV3) for the similarity embedding; ImageMetrics for blur, noise
  * and exposure. Nothing is uploaded.
  */
 class Analyzer(private val context: Context) {
@@ -43,21 +47,39 @@ class Analyzer(private val context: Context) {
   private val labeler = ImageLabeling.getClient(ImageLabelerOptions.Builder().setConfidenceThreshold(0.55f).build())
   private val reader = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
-  // MediaPipe tasks are not thread-safe: one embedder per worker thread.
-  private val embedder = ThreadLocal.withInitial {
+  // MobileNetV3 image embedder run with TensorFlow Lite. Interpreters are not thread-safe:
+  // one per worker thread.
+  private val interpreter = ThreadLocal.withInitial {
     try {
-      ImageEmbedder.createFromOptions(
-        context,
-        ImageEmbedder.ImageEmbedderOptions.builder()
-          .setBaseOptions(BaseOptions.builder().setModelAssetPath("mobilenet_v3_small.tflite").build())
-          .setQuantize(true)
-          .setL2Normalize(true)
-          .build()
-      )
+      val model = context.assets.openFd(MODEL).use { fd ->
+        FileInputStream(fd.fileDescriptor).channel.map(FileChannel.MapMode.READ_ONLY, fd.startOffset, fd.declaredLength)
+      }
+      Interpreter(model, Interpreter.Options().setNumThreads(1))
     } catch (e: Throwable) {
       Log.e(TAG, "Similarity model failed to start", e)
       null
     }
+  }
+
+  /** 1024-value fingerprint of what the photo shows, L2-normalised and stored as int8 (base64). */
+  private fun embed(b: Bitmap): String? {
+    val tf = interpreter.get() ?: return null
+    val sized = Bitmap.createScaledBitmap(b, INPUT, INPUT, true)
+    val px = pixels(sized)
+    if (sized != b) sized.recycle()
+    val input = ByteBuffer.allocateDirect(INPUT * INPUT * 3 * 4).order(ByteOrder.nativeOrder())
+    for (p in px) {
+      input.putFloat((p shr 16 and 0xff) / 255f)
+      input.putFloat((p shr 8 and 0xff) / 255f)
+      input.putFloat((p and 0xff) / 255f)
+    }
+    input.rewind()
+    val out = Array(1) { FloatArray(1024) }
+    tf.run(input, out)
+    val v = out[0]
+    val maxAbs = v.maxOf { abs(it) }.takeIf { it > 0f } ?: return null
+    val q = ByteArray(v.size) { i -> (v[i] / maxAbs * 127f).roundToInt().coerceIn(-127, 127).toByte() }
+    return Base64.encodeToString(q, Base64.NO_WRAP)
   }
 
   /** Analyses photos in parallel; one failure doesn't stop the batch. */
@@ -125,9 +147,7 @@ class Analyzer(private val context: Context) {
       Tasks.await(reader.process(image), 20, TimeUnit.SECONDS).text.take(1500).ifBlank { null }
     } else null
 
-    val emb = embedder.get()?.embed(BitmapImageBuilder(small).build())
-      ?.embeddingResult()?.embeddings()?.firstOrNull()?.quantizedEmbedding()
-      ?.let { Base64.encodeToString(it, Base64.NO_WRAP) }
+    val emb = embed(small)
 
     val noise = sensorNoise(uri) ?: ImageMetrics.noiseSigma(ImageMetrics.grey(pixels(big)), big.width, big.height)
     val latLon = location(uri)
@@ -184,6 +204,8 @@ class Analyzer(private val context: Context) {
 
   companion object {
     private const val TAG = "Culla"
+    private const val MODEL = "mobilenet_v3_small.tflite"
+    private const val INPUT = 224
     val THREADS = maxOf(2, minOf(3, Runtime.getRuntime().availableProcessors() / 2))
     private val DOC_LABELS = setOf("paper", "menu", "receipt", "poster", "newspaper", "document", "whiteboard", "handwriting", "text", "book", "business card", "envelope")
   }

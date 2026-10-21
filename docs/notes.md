@@ -19,8 +19,8 @@ Everything runs on the phone; nothing is uploaded.
 ## Native module (modules/culla-native, Kotlin)
 - `MediaQueries` – column listing of MediaStore (images + videos, trashed or not).
 - `Analyzer` – per photo, from a 1024 px system thumbnail: ML Kit faces (eye-open + smile probabilities, face
-  sharpness on a 160 px crop), ML Kit labels, ML Kit OCR (screenshots + document-like labels), MediaPipe
-  MobileNetV3 embedding (int8, base64), and `pure/ImageMetrics` (Laplacian variance at 512 px, exposure, dHash).
+  sharpness on a 160 px crop), ML Kit labels, ML Kit OCR (screenshots + document-like labels), TensorFlow Lite
+  MobileNetV3 embedding via TensorFlow Lite (input 224², RGB 0–1; L2-normalised, int8 scaled by max |v|, base64). MediaPipe was dropped: no x86_64 build, so it could not be emulator-tested, and `pure/ImageMetrics` (Laplacian variance at 512 px, exposure, dHash).
   Noise is measured on a full-resolution 512 px centre crop (thumbnails hide grain). 2–3 worker threads.
 - Deletes use `MediaStore.createTrashRequest` (Android's own confirmation, 30-day bin, restorable in the app's Bin
   tab) and `createDeleteRequest` for emptying the bin. Request code must fit 16 bits.
