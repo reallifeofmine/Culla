@@ -29,11 +29,15 @@ Everything runs on the phone; nothing is uploaded.
 - `tests/kotlin` – JVM harness for `pure/ImageMetrics` (uses Google's Maven Central mirror; Maven Central rate-limits).
 
 ## Decisions (src/lib/quality.ts, unit-tested in tests/quality.test.ts)
-- Thresholds calibrated on blurred/noisy/dark variants of natural images at 512 px: sharp 400–1600,
-  gaussian σ1.5 → 8–30. Blurry < 40 (relaxed 22, strict 70); with judgeable faces blur is judged on faces
-  (×0.6) so portraits with soft backgrounds aren't flagged. Noisy > 7.5. Accidental = featureless
-  (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
-- Eyes closed: any face ≥ 6 % of width with min(eye-open) < 0.2.
+- Analysis v2 (ANALYSIS_VERSION; older photos are re-checked in the background, keeping old results meanwhile).
+- Blur: whole photo at 512 px, blurry < 40 (relaxed 22, strict 70). A face is used instead only when it is
+  ≥120 px wide in the 1024 px thumbnail (smaller faces were enlarged before and always read as soft —
+  user report: sharp beach/desert photos flagged); face blurry < 24 (14/40).
+- Eyes closed: BOTH eyes < 0.1 (0.05/0.2) on a face ≥120 px, not wearing sunglasses (eye-area brightness ÷
+  face brightness < 0.55, or a Sunglasses/Goggles label). Small/squinting eyes and winks are not closed.
+- Grain: Immerkær per 32 px block on a full-res centre crop, 10th percentile (texture no longer counts).
+  Clean 0.2–0.9, σ5 noise ≈3, σ10 ≈4.5–6.4. Grainy > 3 (4.5/2) and only when lum < 110 unless > 2× threshold.
+- Accidental = featureless (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
 - Similar sets: sorted by time, 30-min window; join if similar to the set's first AND latest photo
   (prevents chaining); cosine ≥ 0.72 within 1 min (a blurred burst shot measured 0.76), 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;
   shapes (aspect ratio) must match. Exact duplicates (same dHash) join across any time (WhatsApp copies).

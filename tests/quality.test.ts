@@ -20,14 +20,14 @@ const jitter = (v: number[], amt: number, s: number) => v.map((x, i) => Math.max
 test('calibrated flags: sharp photo clean, blur/noise/dark/accidental detected', () => {
   assert.deepEqual(flags(base()), []);
   assert.deepEqual(flags(base({ sharp: 23.6 })), ['blurry']);           // astronaut, gaussian 1.5
-  assert.deepEqual(flags(base({ noise: 8.9, sharp: 2285 })), ['noisy']); // coffee + noise
+  assert.deepEqual(flags(base({ v: 2, noise: 4.5, lum: 60, sharp: 1600 })), ['noisy']); // dark scene with grain
   assert.deepEqual(flags(base({ lum: 0.3 * 0 + 134.6, std: 0.5, sharp: 0.3 })), ['accidental']); // finger over lens
   assert.deepEqual(flags(base({ lum: 12.9, std: 5, sharp: 0.2, clipLow: 0.81 })), ['accidental']); // pocket
   assert.deepEqual(flags(base({ lum: 24, std: 22, clipLow: 0.7, sharp: 120 })), ['dark']);
 });
 
 test('faces: closed eyes flagged, blur judged on the face not the background', () => {
-  assert.deepEqual(flags(base({ faces: [face({ leftEye: 0.05, rightEye: 0.1 })] })), ['eyesClosed']);
+  assert.deepEqual(flags(base({ faces: [face({ leftEye: 0.02, rightEye: 0.04 })] })), ['eyesClosed']);
   assert.deepEqual(flags(base({ sharp: 15, faces: [face({ sharp: 200 })] })), [], 'portrait with soft background is fine');
   assert.deepEqual(flags(base({ sharp: 300, faces: [face({ sharp: 10 })] })), ['blurry']);
   assert.deepEqual(flags(base({ faces: [face({ w: 0.03, leftEye: 0.01, rightEye: 0.01 })] })), [], 'tiny faces are not judged');
@@ -117,4 +117,32 @@ test('a blurred frame in the middle of a burst does not split it', () => {
   const g = groupSimilar(shots);
   assert.equal(g.length, 1);
   assert.equal(g[0].ids.length, 4);
+});
+
+// Cases from real photos the user reviewed.
+test('woman by the ocean: small distant face, sharp photo → not blurry', () => {
+  const far = face({ w: 0.08, px: 62, sharp: -1 });
+  assert.deepEqual(flags(base({ v: 2, sharp: 520, faces: [far] })), []);
+  // Older analyses (enlarged face crop, no px) must not be judged on that face either.
+  assert.deepEqual(flags(base({ sharp: 520, faces: [face({ w: 0.08, sharp: 9 })] })), []);
+});
+
+test('close-up selfie: soft face and both eyes shut → blurry and eyes closed', () => {
+  assert.deepEqual(flags(base({ v: 2, sharp: 18, faces: [face({ w: 0.75, px: 540, sharp: 11, leftEye: 0.03, rightEye: 0.06 })] })).sort(), ['blurry', 'eyesClosed']);
+});
+
+test('man in sunglasses among textured rocks → no flags', () => {
+  const shades = face({ w: 0.08, px: 61, sharp: -1, leftEye: 0.01, rightEye: 0.02, eyeLum: 0.3 });
+  assert.deepEqual(flags(base({ v: 2, sharp: 900, noise: 0.8, lum: 150, faces: [shades] })), []);
+  // Even a big face with sunglasses is not "eyes closed".
+  assert.deepEqual(flags(base({ v: 2, faces: [face({ px: 300, leftEye: 0.01, rightEye: 0.01, eyeLum: 0.35 })] })), []);
+  // Bright, textured scene: texture is not grain.
+  assert.deepEqual(flags(base({ v: 2, noise: 3.4, lum: 160 })), []);
+});
+
+test('eyes closed needs both eyes clearly shut on a face big enough to judge', () => {
+  assert.deepEqual(flags(base({ faces: [face({ px: 300, leftEye: 0.3, rightEye: 0.25 })] })), [], 'small eyes');
+  assert.deepEqual(flags(base({ faces: [face({ px: 300, leftEye: 0.02, rightEye: 0.9 })] })), [], 'one eye / wink');
+  assert.deepEqual(flags(base({ faces: [face({ px: 80, leftEye: 0.01, rightEye: 0.01 })] })), [], 'face too small');
+  assert.deepEqual(flags(base({ faces: [face({ px: 300, leftEye: 0.02, rightEye: 0.03, eyeLum: 0.95 })] })), ['eyesClosed']);
 });

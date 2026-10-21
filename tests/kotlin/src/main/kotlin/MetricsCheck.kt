@@ -18,6 +18,6 @@ fun main(args: Array<String>) {
     val sw = if (s < 1) nw else w; val sh = if (s < 1) nh else h
     val e = ImageMetrics.exposure(g512)
     println("%-24s %8.1f %7.2f %6.1f %6.1f %5.2f %5.2f %5.2f %6.1f".format(f.name, ImageMetrics.laplacianVariance(g512, sw, sh),
-      ImageMetrics.noiseSigma(g, w, h), e.mean, e.std, e.clipLow, e.clipHigh, e.entropy, ImageMetrics.colourfulness(argb)))
+      ImageMetrics.flatNoise(g, w, h), e.mean, e.std, e.clipLow, e.clipHigh, e.entropy, ImageMetrics.colourfulness(argb)))
   }
 }

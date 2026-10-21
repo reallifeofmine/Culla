@@ -8,8 +8,12 @@ export type Face = {
   x: number; y: number; w: number; h: number;
   /** ML Kit probabilities, null when the face is too small or turned away */
   leftEye: number | null; rightEye: number | null; smile: number | null;
-  /** Laplacian variance of the face scaled to 160 px wide */
+  /** Laplacian variance of the face at ≤160 px wide; -1 when too small to judge (analysis v2+) */
   sharp: number;
+  /** face width in thumbnail pixels (v2+) */
+  px?: number;
+  /** eye-area brightness ÷ face brightness (v2+); sunglasses read well below 0.55 */
+  eyeLum?: number | null;
 };
 
 export type Analysis = {
@@ -22,7 +26,12 @@ export type Analysis = {
   labels: { t: string; c: number }[];
   text: string | null;
   lat: number | null; lon: number | null;
+  /** measurement version (missing = 1) */
+  v?: number;
 };
+
+/** Photos measured with an older version are re-checked in the background. */
+export const ANALYSIS_VERSION = 2;
 
 export type Media = {
   id: string;
@@ -46,10 +55,21 @@ export const FLAG_LABEL: Record<Flag, string> = {
 };
 
 const BLUR = { relaxed: 22, normal: 40, strict: 70 };
-const NOISE = { relaxed: 9.5, normal: 7.5, strict: 6 };
+const FACE_BLUR = { relaxed: 14, normal: 24, strict: 40 };
+// Grain in the smoothest areas at full resolution: clean photos 0.2–0.9, visible grain 3+.
+const NOISE = { relaxed: 4.5, normal: 3, strict: 2 };
+const EYES_SHUT = { relaxed: 0.05, normal: 0.1, strict: 0.2 };
 
-/** A face counts for eyes and sharpness checks when it is big enough to judge. */
-const judgeable = (f: Face) => f.w >= 0.06 && f.leftEye !== null && f.rightEye !== null;
+const version = (a: Analysis) => a.v ?? 1;
+/** Face width in pixels; older analyses didn't store it, so estimate from a typical 768 px-wide thumbnail. */
+const facePx = (f: Face) => f.px ?? f.w * 768;
+/** Big enough to judge sharpness without enlarging (small, distant faces always look soft). */
+const faceSharpOk = (f: Face) => facePx(f) >= 120 && f.sharp >= 0;
+const wearingSunglasses = (a: Analysis, f: Face) =>
+  (f.eyeLum != null && f.eyeLum < 0.55) || a.labels.some(l => l.c >= 0.6 && /sunglasses|goggles/i.test(l.t));
+/** Eyes can be judged: big face, both probabilities present, no sunglasses. */
+const eyesJudgeable = (a: Analysis, f: Face) =>
+  facePx(f) >= 120 && f.leftEye !== null && f.rightEye !== null && !wearingSunglasses(a, f);
 
 export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal'): Flag[] {
   if (!a) return [];
@@ -57,12 +77,14 @@ export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal')
   const featureless = a.std < 8 && a.sharp < 3;
   const blackFrame = a.lum < 20 && a.std < 10;
   if (featureless || blackFrame) return ['accidental'];
-  const faces = a.faces.filter(judgeable);
-  // With faces, judge blur on the faces (a soft background is often intentional).
-  const blurry = faces.length ? Math.max(...faces.map(f => f.sharp)) < BLUR[s] * 0.6 : a.sharp < BLUR[s];
+  // A big face is judged on the face (a soft background is often intentional); otherwise the whole photo.
+  const faces = a.faces.filter(faceSharpOk);
+  const blurry = faces.length ? Math.max(...faces.map(f => f.sharp)) < FACE_BLUR[s] : a.sharp < BLUR[s];
   if (blurry) out.push('blurry');
-  if (faces.some(f => Math.min(f.leftEye!, f.rightEye!) < (s === 'strict' ? 0.35 : 0.2))) out.push('eyesClosed');
-  if (a.noise > NOISE[s]) out.push('noisy');
+  // Both eyes clearly shut. Small or squinting eyes and sunglasses don't count.
+  if (a.faces.some(f => eyesJudgeable(a, f) && Math.max(f.leftEye!, f.rightEye!) < EYES_SHUT[s])) out.push('eyesClosed');
+  // Grain is high-ISO noise: judged on smooth areas, and only in darker scenes unless extreme.
+  if (version(a) >= 2 && a.noise > NOISE[s] && (a.lum < 110 || a.noise > NOISE[s] * 2)) out.push('noisy');
   if (a.lum < 28 && a.clipLow > 0.6) out.push('dark');
   if (a.lum > 225 && a.clipHigh > 0.45) out.push('bright');
   return out;
@@ -76,13 +98,14 @@ export function keepScore(m: Media): number {
   if (!a) return 0;
   const sharp = clamp((Math.log2(a.sharp + 1) - 3) / 7); // 7 → 0, ~1000 → 1
   const exposure = clamp(1 - Math.abs(a.lum - 120) / 140 - a.clipLow * 0.8 - a.clipHigh * 0.8);
-  const noise = clamp(1 - (a.noise - 2) / 10);
-  const faces = a.faces.filter(judgeable);
+  const noise = version(a) >= 2 ? clamp(1 - (a.noise - 0.5) / 5) : 1;
+  const faces = a.faces.filter(f => eyesJudgeable(a, f));
   let score: number;
   if (faces.length) {
     const eyes = faces.reduce((s, f) => s + Math.min(f.leftEye!, f.rightEye!), 0) / faces.length;
     const smile = faces.reduce((s, f) => s + (f.smile ?? 0), 0) / faces.length;
-    const faceSharp = clamp((Math.log2(Math.min(...faces.map(f => f.sharp)) + 1) - 3) / 6);
+    const sized = faces.filter(faceSharpOk);
+    const faceSharp = sized.length ? clamp((Math.log2(Math.min(...sized.map(f => f.sharp)) + 1) - 3) / 6) : sharp;
     score = 30 * eyes + 10 * smile + 20 * faceSharp + 15 * sharp + 15 * exposure + 10 * noise;
   } else {
     score = 45 * sharp + 30 * exposure + 15 * noise + 10 * clamp(a.colour / 60);
@@ -202,7 +225,7 @@ export function reasons(m: Media, best: Media, sens: Sensitivity = 'normal'): st
   const out = flags(m.a, sens).map(f => FLAG_LABEL[f]);
   if (!out.length && m.a && best.a) {
     if (m.a.sharp < best.a.sharp * 0.6) out.push('Less sharp');
-    const eyes = (x: Analysis) => Math.min(...x.faces.filter(judgeable).map(f => Math.min(f.leftEye!, f.rightEye!)), 1);
+    const eyes = (x: Analysis) => Math.min(...x.faces.filter(f => eyesJudgeable(x, f)).map(f => Math.min(f.leftEye!, f.rightEye!)), 1);
     if (eyes(m.a) < eyes(best.a) - 0.3) out.push('Eyes half closed');
     if (!out.length) out.push('Similar shot');
   }

@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { Culla, toAnalysis, toMedia } from './native';
 import type { RawAnalysis } from '../../modules/culla-native';
-import { flags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
+import { ANALYSIS_VERSION, flags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
 import { persist } from './persist';
 
 export type Item = Media & { expires: number; name: string };
@@ -90,7 +90,7 @@ export async function load() {
     if (m.type === 'photo') {
       photos++;
       const a = saved!.get(m.id);
-      if (a) { m.a = a; analysed++; }
+      if (a) { m.a = a; if ((a.v ?? 1) >= ANALYSIS_VERSION) analysed++; }
     }
   }
   // Forget analyses of photos that no longer exist.
@@ -107,7 +107,8 @@ let scanToken = 0;
 
 export function startScan() {
   if (state.scanning || state.access === 'none') return;
-  const todo = state.media.filter(m => m.type === 'photo' && !m.a).sort((a, b) => b.taken - a.taken);
+  // New photos and ones measured by an older version (they keep their old results meanwhile).
+  const todo = state.media.filter(m => m.type === 'photo' && (!m.a || (m.a.v ?? 1) < ANALYSIS_VERSION)).sort((a, b) => b.taken - a.taken);
   if (!todo.length) return;
   const token = ++scanToken;
   set({ scanning: true, paused: false, scanError: null });

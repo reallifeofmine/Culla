@@ -3,6 +3,7 @@ package expo.modules.cullanative
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapRegionDecoder
+import android.graphics.PointF
 import android.graphics.Rect
 import android.net.Uri
 import android.provider.MediaStore
@@ -14,6 +15,7 @@ import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
 import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.google.mlkit.vision.text.TextRecognition
@@ -41,6 +43,7 @@ class Analyzer(private val context: Context) {
     FaceDetectorOptions.Builder()
       .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
       .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+      .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
       .setMinFaceSize(0.05f)
       .build()
   )
@@ -122,16 +125,20 @@ class Analyzer(private val context: Context) {
     val faceList = Tasks.await(faces.process(image), 20, TimeUnit.SECONDS).map { f ->
       val r = Rect(f.boundingBox)
       r.intersect(0, 0, big.width, big.height)
-      val faceSharp = if (r.width() > 8 && r.height() > 8) {
+      // Sharpness only when the face is big enough to judge without enlarging it (enlarging
+      // makes any face look soft). Faces wider than 160 px are scaled down to 160 px.
+      val faceSharp = if (r.width() >= MIN_FACE_PX && r.height() > 8) {
         val crop = Bitmap.createBitmap(big, r.left, r.top, r.width(), r.height())
-        val fw = 160
+        val fw = minOf(160, r.width())
         val fh = maxOf(1, (r.height() * fw.toFloat() / r.width()).toInt())
-        val norm = Bitmap.createScaledBitmap(crop, fw, fh, true)
+        val norm = if (fw == r.width()) crop else Bitmap.createScaledBitmap(crop, fw, fh, true)
         val v = ImageMetrics.laplacianVariance(ImageMetrics.grey(pixels(norm)), fw, fh)
         if (norm != crop) norm.recycle()
         crop.recycle()
         v
-      } else 0.0
+      } else -1.0
+      // Eye brightness relative to the face: sunglasses make the eye areas much darker than skin.
+      val eyeLum = eyeBrightness(big, r, f.getLandmark(FaceLandmark.LEFT_EYE)?.position, f.getLandmark(FaceLandmark.RIGHT_EYE)?.position)
       mapOf(
         "x" to r.left.toDouble() / big.width, "y" to r.top.toDouble() / big.height,
         "w" to r.width().toDouble() / big.width, "h" to r.height().toDouble() / big.height,
@@ -139,6 +146,8 @@ class Analyzer(private val context: Context) {
         "rightEye" to f.rightEyeOpenProbability?.toDouble(),
         "smile" to f.smilingProbability?.toDouble(),
         "sharp" to faceSharp,
+        "px" to r.width(),
+        "eyeLum" to eyeLum,
       )
     }
     val labels = Tasks.await(labeler.process(image), 20, TimeUnit.SECONDS).map { mapOf("t" to it.text, "c" to it.confidence.toDouble()) }
@@ -149,7 +158,7 @@ class Analyzer(private val context: Context) {
 
     val emb = embed(small)
 
-    val noise = sensorNoise(uri) ?: ImageMetrics.noiseSigma(ImageMetrics.grey(pixels(big)), big.width, big.height)
+    val noise = sensorNoise(uri) ?: ImageMetrics.flatNoise(ImageMetrics.grey(pixels(big)), big.width, big.height)
     val latLon = location(uri)
 
     val result = mapOf(
@@ -159,6 +168,7 @@ class Analyzer(private val context: Context) {
       "colour" to ImageMetrics.colourfulness(argb),
       "hash" to hash,
       "emb" to emb,
+      "v" to ANALYSIS_VERSION,
       "faces" to faceList,
       "labels" to labels,
       "text" to text,
@@ -170,7 +180,23 @@ class Analyzer(private val context: Context) {
     return result
   }
 
-  /** Noise measured on a full-resolution centre crop (thumbnails hide grain). */
+  /** Mean eye-area brightness divided by mean face brightness (null if landmarks are missing). */
+  private fun eyeBrightness(b: Bitmap, face: Rect, left: PointF?, right: PointF?): Double? {
+    if (left == null || right == null || face.width() < MIN_FACE_PX) return null
+    fun mean(cx: Int, cy: Int, half: Int): Double {
+      val x0 = (cx - half).coerceIn(0, b.width - 1); val x1 = (cx + half).coerceIn(x0 + 1, b.width)
+      val y0 = (cy - half).coerceIn(0, b.height - 1); val y1 = (cy + half).coerceIn(y0 + 1, b.height)
+      val px = IntArray((x1 - x0) * (y1 - y0))
+      b.getPixels(px, 0, x1 - x0, x0, y0, x1 - x0, y1 - y0)
+      return ImageMetrics.grey(px).average()
+    }
+    val half = maxOf(2, face.width() / 12)
+    val eyes = (mean(left.x.toInt(), left.y.toInt(), half) + mean(right.x.toInt(), right.y.toInt(), half)) / 2
+    val skin = mean(face.centerX(), (face.top + face.height() * 0.68f).toInt(), face.width() / 6)
+    return if (skin > 0) eyes / skin else null
+  }
+
+  /** Grain measured on a full-resolution centre crop (thumbnails hide grain), in its smoothest areas. */
   @Suppress("DEPRECATION")
   private fun sensorNoise(uri: Uri): Double? = try {
     context.contentResolver.openInputStream(uri)?.use { input ->
@@ -181,7 +207,7 @@ class Analyzer(private val context: Context) {
       val crop = dec.decodeRegion(Rect(left, top, left + side, top + side), null)
       dec.recycle()
       val c = software(crop)
-      val v = ImageMetrics.noiseSigma(ImageMetrics.grey(pixels(c)), c.width, c.height)
+      val v = ImageMetrics.flatNoise(ImageMetrics.grey(pixels(c)), c.width, c.height)
       c.recycle()
       v
     }
@@ -206,6 +232,9 @@ class Analyzer(private val context: Context) {
     private const val TAG = "Culla"
     private const val MODEL = "mobilenet_v3_small.tflite"
     private const val INPUT = 224
+    private const val MIN_FACE_PX = 120
+    /** Bump when measurements change so photos are re-checked. */
+    const val ANALYSIS_VERSION = 2
     val THREADS = maxOf(2, minOf(3, Runtime.getRuntime().availableProcessors() / 2))
     private val DOC_LABELS = setOf("paper", "menu", "receipt", "poster", "newspaper", "document", "whiteboard", "handwriting", "text", "book", "business card", "envelope")
   }

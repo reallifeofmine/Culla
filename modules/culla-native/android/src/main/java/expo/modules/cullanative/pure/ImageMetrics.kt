@@ -56,6 +56,29 @@ object ImageMetrics {
     return total * sqrt(Math.PI / 2) / (6.0 * (w - 2) * (h - 2))
   }
 
+  /**
+   * Grain in the smoothest parts of the image: Immerkær's estimate per 32 px block, taking the
+   * 10th percentile. Texture (rock, sand, foliage) only raises busy blocks, so it no longer
+   * reads as grain; sensor noise raises every block, including sky and walls.
+   */
+  fun flatNoise(g: IntArray, w: Int, h: Int, block: Int = 32): Double {
+    if (w < block || h < block) return noiseSigma(g, w, h)
+    val values = ArrayList<Double>()
+    val tile = IntArray(block * block)
+    var by = 0
+    while (by + block <= h) {
+      var bx = 0
+      while (bx + block <= w) {
+        for (y in 0 until block) System.arraycopy(g, (by + y) * w + bx, tile, y * block, block)
+        values.add(noiseSigma(tile, block, block))
+        bx += block
+      }
+      by += block
+    }
+    values.sort()
+    return values[(values.size * 0.1).toInt()]
+  }
+
   data class Exposure(val mean: Double, val std: Double, val clipLow: Double, val clipHigh: Double, val entropy: Double)
 
   fun exposure(g: IntArray): Exposure {
