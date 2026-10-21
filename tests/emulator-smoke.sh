@@ -74,6 +74,12 @@ grep -q "Culla analyze" "$OUT/logcat.txt" && { echo "Analysis errors in the log"
 grep -q "^Clean up$" "$OUT/1-dashboard.txt" || { echo "Culla's screen was not visible"; fail=1; }
 grep -qi "couldn.t check\|couldn.t be checked" "$OUT/1-dashboard.txt" && { echo "Check reported an error"; fail=1; }
 grep -q "^0 / " "$OUT/1-dashboard.txt" && { echo "Nothing was checked"; fail=1; }
-grep -q "^Similar shots$" "$OUT/2-similar.txt" || grep -q "Set 1 of" "$OUT/3-set.txt" || { echo "No similar set found for the burst"; fail=1; }
+python3 - "$OUT/1-dashboard.txt" <<'PY' || { echo "No similar set found for the burst"; fail=1; }
+import sys
+lines = [l.strip() for l in open(sys.argv[1], encoding='utf-8') if l.strip()]
+i = lines.index('Similar shots') if 'Similar shots' in lines else -1
+sys.exit(0 if i >= 0 and i + 1 < len(lines) and lines[i + 1] != 'Nothing found' else 1)
+PY
+echo "---- analysis log ----"; grep -E " Culla *:" "$OUT/logcat-full.txt" | head -30
 echo "smoke result: $([ $fail = 0 ] && echo PASS || echo FAIL)" | tee "$OUT/result.txt"
 exit $fail

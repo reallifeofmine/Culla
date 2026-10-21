@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Log
 import android.util.Size
 import androidx.exifinterface.media.ExifInterface
 import com.google.android.gms.tasks.Tasks
@@ -54,6 +55,7 @@ class Analyzer(private val context: Context) {
           .build()
       )
     } catch (e: Throwable) {
+      Log.e(TAG, "Similarity model failed to start", e)
       null
     }
   }
@@ -142,6 +144,7 @@ class Analyzer(private val context: Context) {
       "text" to text,
       "lat" to latLon?.get(0), "lon" to latLon?.get(1),
     )
+    Log.i(TAG, "analysed $uri sharp=${result["sharp"]} noise=$noise hash=$hash emb=${emb?.length ?: "none"} faces=${faceList.size} labels=${labels.size}")
     if (small != big) small.recycle()
     big.recycle()
     return result
@@ -180,6 +183,7 @@ class Analyzer(private val context: Context) {
   }
 
   companion object {
+    private const val TAG = "Culla"
     val THREADS = maxOf(2, minOf(3, Runtime.getRuntime().availableProcessors() / 2))
     private val DOC_LABELS = setOf("paper", "menu", "receipt", "poster", "newspaper", "document", "whiteboard", "handwriting", "text", "book", "business card", "envelope")
   }
