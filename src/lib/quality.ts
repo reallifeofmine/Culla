@@ -129,7 +129,12 @@ export type Group = { id: string; ids: string[]; best: string; saving: number; t
 
 type Item = { m: Media; emb: Int8Array | null };
 
+const shape = (m: Media) => (m.w && m.h ? Math.max(m.w, m.h) / Math.min(m.w, m.h) : 0);
+
 function similarEnough(p: Item, q: Item, gapMs: number): boolean {
+  // Same moment, same camera: the same shape. Stops a screenshot joining a camera photo.
+  const sp = shape(p.m), sq = shape(q.m);
+  if (sp && sq && Math.abs(sp - sq) > 0.12) return false;
   const ha = p.m.a!.hash, hb = q.m.a!.hash;
   if (hamming(ha, hb) <= 5) return true; // the same picture, give or take
   if (!p.emb || !q.emb) return false;

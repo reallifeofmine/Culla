@@ -96,3 +96,11 @@ test('smart albums and search', () => {
   assert.deepEqual(search([dog, receipt, shot], 'dog march').map(m => m.id), [dog.id]);
   assert.deepEqual(search([dog, receipt, shot], 'woolworths').map(m => m.id), [receipt.id]);
 });
+
+test('different shapes never group (screenshot vs camera photo)', () => {
+  const t0 = Date.UTC(2026, 5, 3, 10);
+  const v = scene(6);
+  const photo = media(base({ emb: enc(v), hash: 'abcdabcdabcdabcd' }), { taken: t0 });
+  const shot = media(base({ emb: enc(jitter(v, 4, 1)), hash: '1234123412341234' }), { taken: t0 + 5000, w: 1080, h: 2340, bucket: 'Screenshots' });
+  assert.equal(groupSimilar([photo, shot]).length, 0);
+});
