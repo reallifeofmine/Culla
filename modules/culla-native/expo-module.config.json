@@ -1,9 +1,11 @@
 {
-  "platforms": ["apple", "android", "web"],
-  "apple": {
-    "modules": ["CullaNativeModule"]
-  },
+  "platforms": [
+    "android",
+    "web"
+  ],
   "android": {
-    "modules": ["expo.modules.cullanative.CullaNativeModule"]
+    "modules": [
+      "expo.modules.cullanative.CullaNativeModule"
+    ]
   }
 }

@@ -17,7 +17,18 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.reallifeofmine.culla"
+      "package": "com.reallifeofmine.culla",
+      "permissions": [
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,18 +36,6 @@
     "scheme": "culla",
     "plugins": [
       "expo-router",
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Culla looks at your photos on this phone to find similar shots and ones you may not want. Nothing is uploaded.",
-          "savePhotosPermission": "Culla saves edited and compressed copies of your photos.",
-          "isAccessMediaLocationEnabled": true,
-          "granularPermissions": [
-            "photo",
-            "video"
-          ]
-        }
-      ],
       [
         "expo-build-properties",
         {
