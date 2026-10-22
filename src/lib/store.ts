@@ -24,6 +24,7 @@ type State = {
   albums: Record<AlbumKey, string[]>;
   storage: { total: number; free: number } | null;
   sensitivity: Sensitivity;
+  similarSort: SimilarSort;
   version: number; // bumps on every change, for memo keys
 };
 
@@ -33,7 +34,7 @@ const emptyAlbums = (): Record<AlbumKey, string[]> => ({ people: [], selfies: []
 let state: State = {
   access: 'unknown', loaded: false, media: [], byId: new Map(), analysed: 0, photos: 0,
   scanning: false, paused: false, scanError: null, groups: [], flagged: emptyFlags(), albums: emptyAlbums(),
-  storage: null, sensitivity: 'normal', version: 0,
+  storage: null, sensitivity: 'normal', similarSort: 'recent', version: 0,
 };
 const listeners = new Set<() => void>();
 const emit = () => { state = { ...state, version: state.version + 1 }; listeners.forEach(l => l()); };
@@ -64,6 +65,7 @@ function derive(now = false) {
 // ---------- loading ----------
 export async function init() {
   state.sensitivity = ((await persist.getSetting('sensitivity')) as Sensitivity) || 'normal';
+  state.similarSort = ((await persist.getSetting('similarSort')) as SimilarSort) || 'recent';
   const access = Culla.getAccess();
   set({ access });
   if (access !== 'none') await load();
@@ -163,6 +165,18 @@ export async function rescanAll() {
   set({ analysed: 0, scanning: false });
   derive(true);
   startScan();
+}
+
+export type SimilarSort = 'recent' | 'saving';
+
+/** Similar sets in the order the user chose (newest first, or most space saved first). */
+export function sortGroups(groups: Group[], sort: SimilarSort): Group[] {
+  return sort === 'saving' ? [...groups].sort((a, b) => b.saving - a.saving) : groups;
+}
+
+export async function setSimilarSort(sort: SimilarSort) {
+  set({ similarSort: sort });
+  await persist.setSetting('similarSort', sort);
 }
 
 export async function setSensitivity(s: Sensitivity) {

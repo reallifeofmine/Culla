@@ -6,12 +6,13 @@ import { Alert, FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { ActionBar } from '../components/ActionBar';
 import { Button, Empty } from '../components/ui';
 import { bytes, day, time } from '../lib/format';
-import { trash, useStore } from '../lib/store';
+import { setSimilarSort, sortGroups, trash, useStore } from '../lib/store';
 import { type, useTheme } from '../theme';
 
 export default function Similar() {
   const { c } = useTheme();
-  const groups = useStore(s => s.groups);
+  const sort = useStore(s => s.similarSort);
+  const groups = sortGroups(useStore(s => s.groups), sort);
   const byId = useStore(s => s.byId);
   const [busy, setBusy] = useState(false);
   const extras = groups.flatMap(g => g.ids.filter(id => id !== g.best));
@@ -30,7 +31,19 @@ export default function Similar() {
     <View style={{ flex: 1 }}>
       <FlatList
         data={groups} keyExtractor={g => g.id} contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 120 }}
-        ListHeaderComponent={<Text style={[type.body, { color: c.muted, marginBottom: 4 }]}>Each set keeps its best photo (★). Tap a set to choose differently.</Text>}
+        ListHeaderComponent={
+          <View style={{ gap: 10, marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: c.raised, borderRadius: 12, padding: 4 }} accessibilityRole="tablist">
+              {([['recent', 'Most recent'], ['saving', 'Biggest saving']] as const).map(([k, label]) => (
+                <Pressable key={k} onPress={() => setSimilarSort(k)} accessibilityRole="tab" accessibilityState={{ selected: sort === k }}
+                  style={{ flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center', backgroundColor: sort === k ? c.card : 'transparent' }}>
+                  <Text style={[type.body, { color: sort === k ? c.text : c.muted, fontWeight: '700' }]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[type.body, { color: c.muted }]}>Each set keeps its best photo (★). Tap a set to zoom in and choose differently.</Text>
+          </View>
+        }
         renderItem={({ item: g }) => (
           <Pressable onPress={() => router.push({ pathname: '/group/[id]', params: { id: g.id } })} style={({ pressed }) => ({ backgroundColor: c.card, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: c.line, opacity: pressed ? 0.85 : 1 })}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
