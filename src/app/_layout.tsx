@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { init } from '../lib/store';
 import { useTheme } from '../theme';
 
@@ -8,7 +9,7 @@ export default function RootLayout() {
   const { c, dark } = useTheme();
   useEffect(() => { init().catch(() => {}); }, []);
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
@@ -23,6 +24,6 @@ export default function RootLayout() {
         <Stack.Screen name="edit/[id]" options={{ title: 'Edit', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="compress" options={{ title: 'Shrink large photos' }} />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
