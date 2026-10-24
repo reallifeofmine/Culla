@@ -58,7 +58,7 @@ function Zoomable({ uri, onSwipe }: { uri: string; onSwipe: (dir: 1 | -1) => voi
     const next = dir > 0 ? STEPS.find(s => s > cur + 0.05) ?? MAX : [...STEPS].reverse().find(s => s < cur - 0.05) ?? 1;
     apply(next, g.current.x, g.current.y); settle();
   };
-  const round = { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center' as const, justifyContent: 'center' as const };
+  const round = { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center' as const, justifyContent: 'center' as const };
 
   return (
     <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -80,8 +80,9 @@ function Zoomable({ uri, onSwipe }: { uri: string; onSwipe: (dir: 1 | -1) => voi
 }
 
 /** Full-screen look at each photo of a set, with zoom, to pick the keeper. */
-export function ZoomViewer({ items, start, best, onPickBest, onClose }: {
-  items: Item[]; start: number; best: string; onPickBest: (id: string) => void; onClose: () => void;
+export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, onClose }: {
+  items: Item[]; start: number; best: string; removed: Set<string>;
+  onPickBest: (id: string) => void; onToggle: (id: string) => void; onClose: () => void;
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -91,6 +92,8 @@ export function ZoomViewer({ items, start, best, onPickBest, onClose }: {
   if (!m) return null;
   const go = (d: 1 | -1) => setI(x => Math.min(items.length - 1, Math.max(0, x + d)));
   const isBest = m.id === best;
+  const gone = removed.has(m.id);
+  const keeping = items.filter(x => !removed.has(x.id)).length;
 
   return (
     <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -98,16 +101,23 @@ export function ZoomViewer({ items, start, best, onPickBest, onClose }: {
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
         <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={{ padding: 6 }}><Ionicons name="close" size={28} color="#fff" /></Pressable>
-          <Text style={[type.body, { color: '#fff', fontWeight: '700', flex: 1 }]}>{i + 1} of {items.length}</Text>
-          {isBest ? <Pill label="★ Best" tone="good" /> : null}
+          <View style={{ flex: 1 }}>
+            <Text style={[type.body, { color: '#fff', fontWeight: '700' }]}>{i + 1} of {items.length}</Text>
+            <Text style={[type.tiny, { color: '#bbb' }]}>Keeping {keeping} · deleting {items.length - keeping}</Text>
+          </View>
+          <Pill label={isBest ? '★ Best' : gone ? 'Will be deleted' : 'Keeping'} tone={isBest || !gone ? 'good' : 'bad'} />
         </View>
         <Zoomable uri={m.uri} onSwipe={go} />
         <Text style={[type.small, { color: '#bbb', textAlign: 'center', paddingVertical: 6 }]}>Pinch, double-tap or use + / − to zoom · swipe for the next photo</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: insets.bottom + 16 }}>
-          <Pressable onPress={() => go(-1)} disabled={i === 0} accessibilityLabel="Previous photo" style={{ padding: 12, opacity: i === 0 ? 0.3 : 1 }}><Ionicons name="chevron-back" size={28} color="#fff" /></Pressable>
-          <Button title={isBest ? 'This is the best' : 'Make this the best'} icon="star" kind={isBest ? 'secondary' : 'primary'} disabled={isBest}
-            onPress={() => onPickBest(m.id)} style={{ flex: 1, backgroundColor: isBest ? c.raised : c.accent }} />
-          <Pressable onPress={() => go(1)} disabled={i === items.length - 1} accessibilityLabel="Next photo" style={{ padding: 12, opacity: i === items.length - 1 ? 0.3 : 1 }}><Ionicons name="chevron-forward" size={28} color="#fff" /></Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingBottom: insets.bottom + 16 }}>
+          <Pressable onPress={() => go(-1)} disabled={i === 0} accessibilityLabel="Previous photo" style={{ padding: 8, opacity: i === 0 ? 0.3 : 1 }}><Ionicons name="chevron-back" size={28} color="#fff" /></Pressable>
+          <Button title={isBest ? 'Best' : 'Make best'} icon="star" kind={isBest ? 'secondary' : 'primary'} disabled={isBest}
+            onPress={() => onPickBest(m.id)} style={{ flex: 1, paddingHorizontal: 10, backgroundColor: isBest ? c.raised : c.accent }} />
+          {/* The best photo is always kept; any other photo can be kept too or deleted. The label is the action. */}
+          <Button title={isBest ? 'Kept' : gone ? 'Keep' : 'Delete'} icon={isBest || gone ? 'checkmark' : 'trash'} disabled={isBest}
+            kind={gone ? 'secondary' : 'danger'} onPress={() => onToggle(m.id)}
+            style={{ flex: 1, paddingHorizontal: 10 }} />
+          <Pressable onPress={() => go(1)} disabled={i === items.length - 1} accessibilityLabel="Next photo" style={{ padding: 8, opacity: i === items.length - 1 ? 0.3 : 1 }}><Ionicons name="chevron-forward" size={28} color="#fff" /></Pressable>
         </View>
       </GestureHandlerRootView>
     </Modal>

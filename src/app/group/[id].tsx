@@ -45,7 +45,11 @@ export default function GroupReview() {
   const heroGone = remove.has(hero.id);
   const saving = items.filter(m => remove.has(m.id)).reduce((n, m) => n + m.size, 0);
   const toggle = (x: string) => setRemove(prev => { const n = new Set(prev); n.has(x) ? n.delete(x) : n.add(x); return n; });
-  const pickBest = (x: string) => { setBestId(x); setViewing(x); setRemove(new Set(g.ids.filter(i => i !== x))); };
+  // The old best is let go unless chosen again; photos the user chose to keep stay kept.
+  const pickBest = (x: string) => {
+    setRemove(prev => { const n = new Set(prev); n.delete(x); if (bestId && bestId !== x) n.add(bestId); return n; });
+    setBestId(x); setViewing(x);
+  };
   const next = () => {
     const after = groups[index + 1] ?? groups[index - 1];
     if (after && after.id !== g.id) router.replace({ pathname: '/group/[id]', params: { id: after.id } });
@@ -101,8 +105,8 @@ export default function GroupReview() {
         </View>
       </ScrollView>
       {zoomAt !== null ? (
-        <ZoomViewer items={items} start={zoomAt} best={best.id}
-          onPickBest={x => pickBest(x)} onClose={() => setZoomAt(null)} />
+        <ZoomViewer items={items} start={zoomAt} best={best.id} removed={remove}
+          onPickBest={x => pickBest(x)} onToggle={toggle} onClose={() => setZoomAt(null)} />
       ) : null}
       <ActionBar>
         <Button title="Skip" kind="secondary" onPress={next} style={{ flex: 0.6 }} />
