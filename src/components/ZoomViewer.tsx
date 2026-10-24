@@ -79,10 +79,13 @@ function Zoomable({ uri, onSwipe }: { uri: string; onSwipe: (dir: 1 | -1) => voi
   );
 }
 
-/** Full-screen look at each photo of a set, with zoom, to pick the keeper. */
-export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, onClose }: {
-  items: Item[]; start: number; best: string; removed: Set<string>;
-  onPickBest: (id: string) => void; onToggle: (id: string) => void; onClose: () => void;
+/**
+ * Full-screen viewer with zoom and swipe. In a similar set it also picks the best (pass `best`
+ * and `onPickBest`); in other lists it offers Details (edit, shrink) instead.
+ */
+export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, onDetails, onClose }: {
+  items: Item[]; start: number; best?: string; removed: Set<string>;
+  onPickBest?: (id: string) => void; onToggle: (id: string) => void; onDetails?: (id: string) => void; onClose: () => void;
 }) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -94,6 +97,7 @@ export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, 
   const isBest = m.id === best;
   const gone = removed.has(m.id);
   const keeping = items.filter(x => !removed.has(x.id)).length;
+  const sets = !!onPickBest;
 
   return (
     <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -103,7 +107,7 @@ export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, 
           <Pressable onPress={onClose} accessibilityLabel="Close" hitSlop={12} style={{ padding: 6 }}><Ionicons name="close" size={28} color="#fff" /></Pressable>
           <View style={{ flex: 1 }}>
             <Text style={[type.body, { color: '#fff', fontWeight: '700' }]}>{i + 1} of {items.length}</Text>
-            <Text style={[type.tiny, { color: '#bbb' }]}>Keeping {keeping} · deleting {items.length - keeping}</Text>
+            <Text style={[type.tiny, { color: '#bbb' }]}>{sets ? `Keeping ${keeping} · deleting ${items.length - keeping}` : `${items.length - keeping} selected to delete`}</Text>
           </View>
           <Pill label={isBest ? '★ Best' : gone ? 'Will be deleted' : 'Keeping'} tone={isBest || !gone ? 'good' : 'bad'} />
         </View>
@@ -111,8 +115,12 @@ export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, 
         <Text style={[type.small, { color: '#bbb', textAlign: 'center', paddingVertical: 6 }]}>Pinch, double-tap or use + / − to zoom · swipe for the next photo</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingBottom: insets.bottom + 16 }}>
           <Pressable onPress={() => go(-1)} disabled={i === 0} accessibilityLabel="Previous photo" style={{ padding: 8, opacity: i === 0 ? 0.3 : 1 }}><Ionicons name="chevron-back" size={28} color="#fff" /></Pressable>
-          <Button title={isBest ? 'Best' : 'Make best'} icon="star" kind={isBest ? 'secondary' : 'primary'} disabled={isBest}
-            onPress={() => onPickBest(m.id)} style={{ flex: 1, paddingHorizontal: 10, backgroundColor: isBest ? c.raised : c.accent }} />
+          {sets ? (
+            <Button title={isBest ? 'Best' : 'Make best'} icon="star" kind={isBest ? 'secondary' : 'primary'} disabled={isBest}
+              onPress={() => onPickBest!(m.id)} style={{ flex: 1, paddingHorizontal: 10, backgroundColor: isBest ? c.raised : c.accent }} />
+          ) : onDetails ? (
+            <Button title="Details" icon="information-circle" kind="secondary" onPress={() => onDetails(m.id)} style={{ flex: 1, paddingHorizontal: 10 }} />
+          ) : null}
           {/* The best photo is always kept; any other photo can be kept too or deleted. The label is the action. */}
           <Button title={isBest ? 'Kept' : gone ? 'Keep' : 'Delete'} icon={isBest || gone ? 'checkmark' : 'trash'} disabled={isBest}
             kind={gone ? 'secondary' : 'danger'} onPress={() => onToggle(m.id)}

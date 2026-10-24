@@ -1,9 +1,10 @@
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { ActionBar } from '../../components/ActionBar';
 import { Grid, type Badge } from '../../components/Grid';
 import { Button, Empty } from '../../components/ui';
+import { ZoomViewer } from '../../components/ZoomViewer';
 import { bytes, plural } from '../../lib/format';
 import { ALBUMS, FLAG_LABEL, flags, search, type AlbumKey, type Flag } from '../../lib/quality';
 import { trash, useStore, type Item } from '../../lib/store';
@@ -43,6 +44,7 @@ export default function List() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selecting, setSelecting] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [viewAt, setViewAt] = useState<number | null>(null);
   useEffect(() => {
     if (info.preselect) { setSelected(new Set(items.map(m => m.id))); setSelecting(true); }
   }, [kind, items.length]);
@@ -69,6 +71,7 @@ export default function List() {
   return (
     <View style={{ flex: 1 }}>
       <Grid items={items} selected={selected} selecting={selecting} onToggle={toggle} badges={badges}
+        onOpen={id => setViewAt(items.findIndex(m => m.id === id))}
         header={
           <View style={{ padding: 16, gap: 10 }}>
             {info.note ? <Text style={[type.body, { color: c.muted }]}>{info.note}</Text> : null}
@@ -78,9 +81,14 @@ export default function List() {
                 <Text style={[type.body, { color: c.accent, fontWeight: '700' }]}>{allOn ? 'Select none' : 'Select all'}</Text>
               </Pressable>
             </View>
-            {!selecting ? <Text style={[type.small, { color: c.muted }]}>Tap a photo to view it. Long-press to select.</Text> : null}
+            <Text style={[type.small, { color: c.muted }]}>Tap a photo to zoom and swipe through. Tap its circle to select it.</Text>
           </View>
         } />
+      {viewAt !== null ? (
+        <ZoomViewer items={items} start={viewAt} removed={selected} onToggle={toggle}
+          onDetails={id => { setViewAt(null); router.push({ pathname: '/photo/[id]', params: { id } }); }}
+          onClose={() => setViewAt(null)} />
+      ) : null}
       {selected.size ? (
         <ActionBar>
           <Button title={`Delete ${selected.size} · ${bytes(size)}`} kind="danger" icon="trash" busy={busy} onPress={del} style={{ flex: 1 }} />
