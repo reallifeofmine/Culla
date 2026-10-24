@@ -1,0 +1,81 @@
+10-24 12:58:58.651 D/AndroidRuntime( 5369): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 12:58:58.655 I/AndroidRuntime( 5369): Using default boot image
+10-24 12:58:58.655 I/AndroidRuntime( 5369): Leaving lock profiling enabled
+10-24 12:58:58.761 D/AndroidRuntime( 5369): Calling main entry com.android.commands.monkey.Monkey
+10-24 12:58:59.031 I/AndroidRuntime( 5369): VM exiting with result code 0.
+10-24 12:59:00.285 I/ReactNativeJS( 5385): Running "main"
+10-24 12:59:00.732 I/DynamiteModule( 5385): Considering local module com.google.mlkit.dynamite.face:10000 and remote module com.google.mlkit.dynamite.face:0
+10-24 12:59:00.732 I/DynamiteModule( 5385): Selected local version of com.google.mlkit.dynamite.face
+10-24 12:59:00.762 I/DynamiteModule( 5385): Considering local module com.google.mlkit.dynamite.text.latin:10000 and remote module com.google.mlkit.dynamite.text.latin:0
+10-24 12:59:00.762 I/DynamiteModule( 5385): Selected local version of com.google.mlkit.dynamite.text.latin
+10-24 12:59:01.769 E/native  ( 5385): E0000 00:00:1792846741.769483    5444 proto_data_store.cc:36] Could not open file /data/user/0/com.reallifeofmine.culla/files/com.google.mlkit.acceleration/com.google.perception.acceleration_analytics_storage_v2.: No such file or directory
+10-24 12:59:03.270 I/Culla   ( 5385): analysed content://media/external/images/media/1000000020 sharp=383.8798860214438 noise=0.24927025619941615 hash=5e3746c64f654854 emb=1368 faces=1 labels=8
+10-24 12:59:03.297 I/Culla   ( 5385): analysed content://media/external/images/media/1000000019 sharp=384.1188421714385 noise=0.23627292440503314 hash=75334e464d634c50 emb=1368 faces=1 labels=7
+10-24 12:59:03.636 I/Culla   ( 5385): analysed content://media/external/images/media/1000000021 sharp=7.300538957748105 noise=0.05570285054735556 hash=de335cc64f6e4c68 emb=1368 faces=1 labels=7
+10-24 12:59:03.862 I/Culla   ( 5385): analysed content://media/external/images/media/1000000022 sharp=385.7547566483524 noise=0.263195968836255 hash=de3554464e6e4868 emb=1368 faces=1 labels=7
+10-24 12:59:03.962 I/Culla   ( 5385): analysed content://media/external/images/media/1000000023 sharp=80.31340590201104 noise=0.3488391015528142 hash=8e122debb6a5dfcd emb=1368 faces=0 labels=6
+10-24 12:59:04.120 I/Culla   ( 5385): analysed content://media/external/images/media/1000000024 sharp=449.85942533301767 noise=0.2829240617384434 hash=1acd6b8f29626210 emb=1368 faces=0 labels=9
+10-24 12:59:04.582 I/Culla   ( 5385): analysed content://media/external/images/media/1000000025 sharp=2.0282927273313422 noise=0.05106094633507593 hash=8e122deba6a5578d emb=1368 faces=0 labels=4
+10-24 12:59:04.680 I/Culla   ( 5385): analysed content://media/external/images/media/1000000026 sharp=1127.5720354992004 noise=0.6254965926046802 hash=1a85ab8d29626a11 emb=1368 faces=0 labels=8
+10-24 12:59:04.866 I/Culla   ( 5385): analysed content://media/external/images/media/1000000027 sharp=0.1708192118113529 noise=0.0 hash=0000008080808080 emb=1368 faces=0 labels=3
+10-24 12:59:04.911 I/ModuleSetMgr( 1467): Download of container feature mlkit.docscan.crop is disabled.
+10-24 12:59:04.911 I/ModuleSetMgr( 1467): Download of container feature mlkit.docscan.enhance is disabled.
+10-24 12:59:05.078 I/Culla   ( 5385): analysed content://media/external/images/media/1000000028 sharp=280.63608632820626 noise=0.10954893940979928 hash=f4f2f6f6f6f2fcf8 emb=1368 faces=0 labels=3
+10-24 12:59:06.721 I/ChimeraConfigurator( 5559): Starting update, reason: 4 urgentFeatures: maps_core:-1, mlkit.barcode.ui:0, tflite_dynamite:-1, mlkit.ocr.common:1, vision.ocr:-1
+10-24 12:59:06.910 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [maps_core, mlkit.barcode.ui, tflite_dynamite, mlkit.ocr.common, vision.ocr]. Pending module sets: container:2318189190800+maps_core+mlkit.barcode.ui+mlkit.ocr.common+vision.barcode,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:07.140 W/ZappDownloader( 5559): No successful module downloads for requested features [maps_core, mlkit.barcode.ui, tflite_dynamite, mlkit.ocr.common, vision.ocr].
+10-24 12:59:07.655 I/GmsDebugLogger( 5559): [83] 1 [maps_core, mlkit.barcode.ui, mlkit.ocr.common, tflite_dynamite, vision.ocr]
+10-24 12:59:07.838 I/ChimeraConfigurator( 5559): Starting update, reason: 4 urgentFeatures: mlkit.barcode.ui:0
+10-24 12:59:07.877 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [mlkit.barcode.ui]. Pending module sets: container:2318189190800+mlkit.barcode.ui+vision.barcode,tflite_dynamite:2640104055100800+tflite_dynamite
+10-24 12:59:07.913 W/ZappDownloader( 5559): No successful module downloads for requested features [mlkit.barcode.ui].
+10-24 12:59:07.926 I/GmsDebugLogger( 5559): [83] 1 [mlkit.barcode.ui]
+10-24 12:59:08.069 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:08.235 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:18.344 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:21.268 I/ChimeraConfigurator( 5559): Starting update, reason: 4 urgentFeatures: mlkit.barcode.ui:0
+10-24 12:59:21.285 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [mlkit.barcode.ui]. Pending module sets: container:2318189190800+mlkit.barcode.ui+vision.barcode,tflite_dynamite:2640104055100800+tflite_dynamite
+10-24 12:59:21.312 W/ZappDownloader( 5559): No successful module downloads for requested features [mlkit.barcode.ui].
+10-24 12:59:21.320 I/GmsDebugLogger( 5559): [83] 1 [mlkit.barcode.ui]
+10-24 12:59:21.648 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:26.816 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:27.643 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 12:59:37.808 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:04.760 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:07.689 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:07.851 I/ChimeraConfigurator( 5559): Starting update, reason: 4 urgentFeatures: mlkit.barcode.ui:0
+10-24 13:00:07.868 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [mlkit.barcode.ui]. Pending module sets: container:2318189190800+mlkit.barcode.ui+vision.barcode,tflite_dynamite:2627305025100800+tflite_dynamite
+10-24 13:00:07.943 W/ZappDownloader( 5559): No successful module downloads for requested features [mlkit.barcode.ui].
+10-24 13:00:07.973 I/GmsDebugLogger( 5559): [83] 1 [mlkit.barcode.ui]
+10-24 13:00:08.269 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:18.354 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:29.207 D/AndroidRuntime( 6158): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:29.227 I/AndroidRuntime( 6158): Using default boot image
+10-24 13:00:29.227 I/AndroidRuntime( 6158): Leaving lock profiling enabled
+10-24 13:00:29.407 D/AndroidRuntime( 6158): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:30.526 D/AndroidRuntime( 6158): Shutting down VM
+10-24 13:00:31.715 D/AndroidRuntime( 6186): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:31.719 I/AndroidRuntime( 6186): Using default boot image
+10-24 13:00:31.719 I/AndroidRuntime( 6186): Leaving lock profiling enabled
+10-24 13:00:31.799 D/AndroidRuntime( 6186): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:32.892 D/AndroidRuntime( 6186): Shutting down VM
+10-24 13:00:38.418 D/AndroidRuntime( 6219): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:38.422 I/AndroidRuntime( 6219): Using default boot image
+10-24 13:00:38.422 I/AndroidRuntime( 6219): Leaving lock profiling enabled
+10-24 13:00:38.497 D/AndroidRuntime( 6219): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:39.542 D/AndroidRuntime( 6219): Shutting down VM
+10-24 13:00:45.291 D/AndroidRuntime( 6248): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:45.296 I/AndroidRuntime( 6248): Using default boot image
+10-24 13:00:45.296 I/AndroidRuntime( 6248): Leaving lock profiling enabled
+10-24 13:00:45.379 D/AndroidRuntime( 6248): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:46.479 D/AndroidRuntime( 6248): Shutting down VM
+10-24 13:00:50.543 D/AndroidRuntime( 6276): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:50.547 I/AndroidRuntime( 6276): Using default boot image
+10-24 13:00:50.547 I/AndroidRuntime( 6276): Leaving lock profiling enabled
+10-24 13:00:50.631 D/AndroidRuntime( 6276): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:51.750 D/AndroidRuntime( 6276): Shutting down VM
+10-24 13:00:53.403 I/ChimeraConfigurator( 5559): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2627305025100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+10-24 13:00:57.422 D/AndroidRuntime( 6311): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-24 13:00:57.427 I/AndroidRuntime( 6311): Using default boot image
+10-24 13:00:57.427 I/AndroidRuntime( 6311): Leaving lock profiling enabled
+10-24 13:00:57.511 D/AndroidRuntime( 6311): Calling main entry com.android.commands.uiautomator.Launcher
+10-24 13:00:58.591 D/AndroidRuntime( 6311): Shutting down VM
