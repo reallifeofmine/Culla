@@ -6,7 +6,7 @@ import { Grid, type Badge } from '../../components/Grid';
 import { Button, Empty } from '../../components/ui';
 import { ZoomViewer } from '../../components/ZoomViewer';
 import { bytes, plural } from '../../lib/format';
-import { ALBUMS, FLAG_LABEL, flags, search, type AlbumKey, type Flag } from '../../lib/quality';
+import { ALBUMS, FLAG_LABEL, issueFlags, search, type AlbumKey, type Flag } from '../../lib/quality';
 import { trash, useStore, type Item } from '../../lib/store';
 import { type, useTheme } from '../../theme';
 
@@ -55,7 +55,7 @@ export default function List() {
   const badges = (m: Item): Badge[] | undefined => {
     if (m.type === 'video') return [{ label: bytes(m.size) }];
     if (kind === 'exposure' || kind === 'search' || album) {
-      const f = flags(m.a, s.sensitivity);
+      const f = issueFlags(m, s.sensitivity);
       return f.length ? f.map(x => ({ label: FLAG_LABEL[x], tone: 'warn' as const })) : undefined;
     }
     return undefined;

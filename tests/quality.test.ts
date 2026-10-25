@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flags, keepScore, groupSimilar, decodeEmbedding, cosine, hamming, albumsFor, search, reasons, type Analysis, type Media, type Face } from '../src/lib/quality.ts';
+import { flags, issueFlags, isScreenshot, keepScore, groupSimilar, decodeEmbedding, cosine, hamming, albumsFor, search, reasons, type Analysis, type Media, type Face } from '../src/lib/quality.ts';
 
 const enc = (v: number[]) => Buffer.from(Int8Array.from(v).buffer).toString('base64');
 const base = (o: Partial<Analysis> = {}): Analysis => ({
@@ -158,4 +158,28 @@ test('noise is a low-light problem: daylight texture never counts', () => {
   // No camera info: only a genuinely dark, clearly noisy scene.
   assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 50 })), ['noisy']);
   assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 120 })), []);
+});
+
+test('washed out: screenshots and white backgrounds are never flagged', () => {
+  const white = { lum: 240, std: 30, clipHigh: 0.7, sharp: 900 };
+  // Screenshots: in the Screenshots folder, or saved elsewhere with a phone-screen shape and no camera info.
+  const inFolder = media(base({ v: 3, ...white }), { bucket: 'Screenshots', path: 'Pictures/Screenshots/', w: 1080, h: 2400 });
+  const saved = media(base({ v: 3, ...white }), { bucket: 'Download', path: 'Download/', w: 1080, h: 2340 });
+  for (const m of [inFolder, saved]) {
+    assert.ok(isScreenshot(m));
+    assert.deepEqual(issueFlags(m), []);
+    assert.ok(albumsFor(m).includes('screenshots'));
+  }
+  // A dark-mode screenshot is not a pocket shot either.
+  assert.deepEqual(issueFlags(media(base({ v: 3, lum: 14, std: 6, sharp: 0.4, clipLow: 0.85 }), { bucket: 'Screenshots', w: 1080, h: 2400 })), []);
+  // Saved images (no camera info, outside the camera folder) are not judged.
+  assert.deepEqual(issueFlags(media(base({ v: 3, ...white }), { bucket: 'WhatsApp Images', path: 'Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Images/', w: 1600, h: 1200 })), []);
+  // Camera photo of a document or whiteboard: readable text, so not washed out.
+  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white, text: 'Meeting notes: agenda for Thursday budget review and actions' }))), []);
+  // Bright but with real detail (white wall, snow, product on white): spread too wide.
+  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, lum: 232, std: 55, clipHigh: 0.55 }))), []);
+  // Genuinely blown-out camera photo.
+  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }))), ['bright']);
+  // A camera photo is still a camera photo even at a screen-like size, because it has ISO.
+  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }), { w: 1080, h: 2340 })), ['bright']);
 });

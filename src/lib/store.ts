@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
 import { Culla, toAnalysis, toMedia } from './native';
 import type { RawAnalysis } from '../../modules/culla-native';
-import { ANALYSIS_VERSION, flags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
+import { ANALYSIS_VERSION, issueFlags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
 import { persist } from './persist';
 
 export type Item = Media & { expires: number; name: string };
@@ -55,7 +55,7 @@ function derive(now = false) {
     const al = emptyAlbums();
     for (const m of state.media) {
       for (const k of albumsFor(m)) al[k].push(m.id);
-      if (m.type === 'photo' && m.a) for (const fl of flags(m.a, state.sensitivity)) f[fl].push(m.id);
+      for (const fl of issueFlags(m, state.sensitivity)) f[fl].push(m.id);
     }
     set({ groups: groupSimilar(state.media, state.sensitivity), flagged: f, albums: al });
   };

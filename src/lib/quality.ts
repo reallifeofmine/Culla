@@ -99,7 +99,10 @@ export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal')
   if (a.faces.some(f => eyesJudgeable(a, f) && Math.max(f.leftEye!, f.rightEye!) < EYES_SHUT[s])) out.push('eyesClosed');
   if (noisy(a, s)) out.push('noisy');
   if (a.lum < 28 && a.clipLow > 0.6) out.push('dark');
-  if (a.lum > 225 && a.clipHigh > 0.45) out.push('bright');
+  // Washed out = a blown-out photo with almost no detail left. A white page, receipt or
+  // whiteboard has readable text or real contrast, so it never counts.
+  const hasText = (a.text ?? '').replace(/\s+/g, '').length >= 20;
+  if (a.lum > 225 && a.clipHigh > 0.5 && a.std < 40 && !hasText) out.push('bright');
   return out;
 }
 
@@ -235,7 +238,7 @@ function buildGroups(items: Item[]): Group[] {
 
 /** Why a photo is suggested for deletion in its group, in plain words. */
 export function reasons(m: Media, best: Media, sens: Sensitivity = 'normal'): string[] {
-  const out = flags(m.a, sens).map(f => FLAG_LABEL[f]);
+  const out = issueFlags(m, sens).map(f => FLAG_LABEL[f]);
   if (!out.length && m.a && best.a) {
     if (m.a.sharp < best.a.sharp * 0.6) out.push('Less sharp');
     const eyes = (x: Analysis) => Math.min(...x.faces.filter(f => eyesJudgeable(x, f)).map(f => Math.min(f.leftEye!, f.rightEye!)), 1);
@@ -272,11 +275,37 @@ const LABELS: Partial<Record<AlbumKey, string[]>> = {
 
 const hasLabel = (a: Analysis, words: string[], min = 0.65) => a.labels.some(l => l.c >= min && words.includes(l.t.toLowerCase()));
 
+/** Common phone screen widths (px) for screenshots saved outside a Screenshots folder. */
+const SCREEN_WIDTHS = [720, 750, 828, 1080, 1125, 1170, 1179, 1242, 1284, 1290, 1440];
+
+/** In a Screenshots folder, or no camera info and exactly the shape of a phone screen. */
+export function isScreenshot(m: Media): boolean {
+  if (/screenshot/i.test(m.path + '/' + m.bucket)) return true;
+  const a = m.a;
+  if (!a || (a.v ?? 1) < 3 || a.iso != null || m.type !== 'photo') return false;
+  const w = Math.min(m.w, m.h), h = Math.max(m.w, m.h);
+  return SCREEN_WIDTHS.includes(w) && h / w >= 1.9 && h / w <= 2.4;
+}
+
+/**
+ * A photo taken with a camera: it carries the camera's settings (ISO) or sits in the camera
+ * folder. Quality checks only make sense for these, not for screenshots or saved images.
+ */
+export function isCameraPhoto(m: Media): boolean {
+  if (m.type !== 'photo' || !m.a || isScreenshot(m)) return false;
+  return m.a.iso != null || /(^|\/)(dcim\/camera|camera)(\/|$)/i.test(m.path) || /^camera$/i.test(m.bucket);
+}
+
+/** Issue flags for the app: camera photos only, so screenshots and saved images are never mislabelled. */
+export function issueFlags(m: Media, s: Sensitivity = 'normal'): Flag[] {
+  return isCameraPhoto(m) ? flags(m.a, s) : [];
+}
+
 export function albumsFor(m: Media): AlbumKey[] {
   const out: AlbumKey[] = [];
   const p = (m.path + '/' + m.bucket).toLowerCase();
   if (m.type === 'video') out.push('videos');
-  if (p.includes('screenshot')) out.push('screenshots');
+  if (isScreenshot(m)) out.push('screenshots');
   if (p.includes('whatsapp')) out.push('whatsapp');
   if (p.includes('download')) out.push('downloads');
   const a = m.a;

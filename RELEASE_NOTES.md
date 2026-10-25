@@ -1,4 +1,3 @@
-- Noise detection fixed: textured daylight photos (leaves, grass, rocks, fabric) are no longer flagged
-- Noise is now only checked on low-light photos, using the camera's ISO setting, and measured in the smoothest background areas
-- "Grainy" is renamed "Noisy"; the category is now "Noisy or too dark"
-- Culla re-checks your photos once in the background to read each photo's camera settings
+- "Washed out" no longer flags screenshots, documents or photos with white backgrounds; it now only catches genuinely blown-out camera photos
+- Screenshots saved outside the Screenshots folder are now recognised and moved to the Screenshots album
+- Blurry, eyes closed, noisy, dark and washed-out checks now apply only to photos taken with a camera, not screenshots or saved images

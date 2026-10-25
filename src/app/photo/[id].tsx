@@ -7,7 +7,7 @@ import { ActionBar } from '../../components/ActionBar';
 import { Button, Empty, Pill } from '../../components/ui';
 import { bytes, day, duration, time } from '../../lib/format';
 import { Culla } from '../../lib/native';
-import { albumsFor, ALBUMS, FLAG_LABEL, flags, keepScore } from '../../lib/quality';
+import { albumsFor, ALBUMS, FLAG_LABEL, issueFlags, keepScore } from '../../lib/quality';
 import { refresh, trash, useStore } from '../../lib/store';
 import { type, useTheme } from '../../theme';
 
@@ -23,7 +23,7 @@ export default function Photo() {
   if (!m) return <Empty icon="image" title="This photo is gone" body="It was deleted or moved." />;
 
   const a = m.a;
-  const f = flags(a, sens);
+  const f = issueFlags(m, sens);
   const albums = albumsFor(m).map(k => ALBUMS.find(x => x.key === k)!.title);
   const compress = async () => {
     setBusy('compress');

@@ -40,6 +40,12 @@ Everything runs on the phone; nothing is uploaded.
   per 32 px tile over five 320 px full-res crops (centre + quadrants), 10th percentile. User report: ferns, forest,
   grass, rock, car fabric in daylight were flagged as grainy by the v2 rule (texture everywhere, no smooth area).
 - Accidental = featureless (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
+- Washed out ('bright'): lum > 225 AND clipHigh > 0.5 AND std < 40 AND no readable text (< 20 OCR chars).
+  User report: the old rule flagged screenshots, documents and white-background images.
+- Which photos are judged: issueFlags() runs the checks only on camera photos (EXIF ISO present, or in the
+  camera folder). Screenshots never get issue flags: Screenshots folder/bucket, or v3 with no ISO and a phone
+  screen shape (short side in SCREEN_WIDTHS, ratio 1.9–2.4) → Screenshots album. Saved/chat images are not judged.
+  groupSimilar still uses flags() directly to drop accidental shots from sets.
 - Similar sets: sorted by time, 30-min window; join if similar to the set's first AND latest photo
   (prevents chaining); cosine ≥ 0.72 within 1 min (a blurred burst shot measured 0.76), 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;
   shapes (aspect ratio) must match. Exact duplicates (same dHash) join across any time (WhatsApp copies).
