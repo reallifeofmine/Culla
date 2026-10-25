@@ -1,12 +1,11 @@
 import * as Application from 'expo-application';
-import { useEffect, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { requestUpdateCheck } from '../../lib/updates';
 import { Button, Card } from '../../components/ui';
 import { type Sensitivity } from '../../lib/quality';
 import { rescanAll, setSensitivity, useStore } from '../../lib/store';
 import { type, useTheme } from '../../theme';
 
-const RELEASES = 'https://github.com/reallifeofmine/culla/releases/latest';
 const LEVELS: { key: Sensitivity; title: string; note: string }[] = [
   { key: 'relaxed', title: 'Relaxed', note: 'Only flags clearly bad photos.' },
   { key: 'normal', title: 'Normal', note: 'Recommended.' },
@@ -18,12 +17,6 @@ export default function Settings() {
   const sens = useStore(s => s.sensitivity);
   const analysed = useStore(s => s.analysed);
   const build = Number(Application.nativeBuildVersion ?? 0);
-  const [latest, setLatest] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch('https://api.github.com/repos/reallifeofmine/culla/releases/latest')
-      .then(r => r.json()).then(j => { const n = Number(String(j.tag_name ?? '').match(/build(\d+)/)?.[1]); if (n) setLatest(n); }).catch(() => {});
-  }, []);
 
   const rescan = () => {
     const go = () => rescanAll();
@@ -56,9 +49,8 @@ export default function Settings() {
         <Text style={[type.h2, { color: c.text }]}>App</Text>
         <Text style={[type.body, { color: c.muted, marginTop: 6 }]}>
           Culla {Application.nativeApplicationVersion ?? ''} (build {build || '–'})
-          {latest && build && latest > build ? ` · build ${latest} is available` : latest && build ? ' · up to date' : ''}
         </Text>
-        {latest && build && latest > build ? <Button title="Get the update" icon="download" onPress={() => Linking.openURL(RELEASES)} style={{ marginTop: 10 }} /> : null}
+        <Button title="Check for updates" icon="cloud-download" onPress={requestUpdateCheck} style={{ marginTop: 10 }} />
         <Button title="Re-check all photos" kind="secondary" icon="refresh" onPress={rescan} style={{ marginTop: 10 }} />
       </Card>
     </ScrollView>

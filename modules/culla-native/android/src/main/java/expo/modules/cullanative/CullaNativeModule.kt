@@ -141,6 +141,24 @@ class CullaNativeModule : Module() {
       mapOf("total" to stat.totalBytes.toDouble(), "free" to stat.availableBytes.toDouble())
     }
 
+    Events("onUpdateProgress")
+
+    AsyncFunction("downloadUpdate") { url: String, promise: Promise ->
+      Thread {
+        try {
+          promise.resolve(Updater.download(context, url) { sendEvent("onUpdateProgress", mapOf("progress" to it)) })
+        } catch (e: Throwable) {
+          promise.reject("E_UPDATE", e.message ?: "Download failed", e)
+        }
+      }.start()
+    }
+
+    Function("canInstallUpdates") { Updater.canInstall(context) }
+
+    Function("openInstallPermission") { Updater.openInstallPermission(appContext.currentActivity ?: context) }
+
+    Function("installUpdate") { path: String -> Updater.install(appContext.currentActivity ?: context, path) }
+
     OnActivityResult { _, payload ->
       if (payload.requestCode == REQUEST_CODE) {
         pendingRequest?.resolve(payload.resultCode == Activity.RESULT_OK)

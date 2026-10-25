@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { init } from '../lib/store';
+import { UpdatePrompt } from '../components/UpdatePrompt';
 import { useTheme } from '../theme';
 
 export default function RootLayout() {
@@ -24,6 +25,7 @@ export default function RootLayout() {
         <Stack.Screen name="edit/[id]" options={{ title: 'Edit', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="compress" options={{ title: 'Shrink large photos' }} />
       </Stack>
+      <UpdatePrompt />
     </GestureHandlerRootView>
   );
 }

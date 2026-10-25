@@ -44,6 +44,16 @@ Everything runs on the phone; nothing is uploaded.
 - Best pick = keepScore (eyes, smile, face sharpness, sharpness, exposure, noise). Everything else pre-ticked.
 - Scan order: newest first, batches of 6, saved to SQLite (`culla.db`) so nothing is analysed twice.
 
+## In-app updates
+- `UpdatePrompt` (root layout) checks GitHub releases on launch and from Settings; shows bullet points from
+  every release newer than the installed build (`nativeBuildVersion` = CI run number).
+- **Before every push, rewrite `RELEASE_NOTES.md`** with "- " dot points for that build; CI publishes it as the
+  release body (`--notes-file`).
+- Native `Updater`: downloads the APK to cache/updates (follows GitHub's redirect), then ACTION_VIEW via
+  `UpdateFileProvider` (authority `<package>.culla.updates`). Needs REQUEST_INSTALL_PACKAGES; first time the
+  user allows "Install unknown apps" for Culla (the app opens that setting and resumes on return).
+- Browser preview: add `?updateTest=1` to the URL to exercise the popup (tests mock api.github.com).
+
 ## Testing
 - `npm test` – logic tests (node --experimental-strip-types).
 - Web preview with a simulated gallery (`CullaNativeModule.web.ts`, `persist.web.ts`):

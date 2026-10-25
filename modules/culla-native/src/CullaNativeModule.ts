@@ -1,7 +1,7 @@
 import { NativeModule, requireNativeModule } from 'expo';
 import type { Access, EditParams, MediaColumns, RawAnalysis, Saved } from './CullaNative.types';
 
-declare class CullaNativeModule extends NativeModule<{}> {
+declare class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { progress: number }) => void }> {
   getAccess(): Access;
   requestAccess(): Promise<Access>;
   listMedia(trashed: boolean): Promise<MediaColumns>;
@@ -16,6 +16,12 @@ declare class CullaNativeModule extends NativeModule<{}> {
   autoParams(id: string): Promise<Required<Omit<EditParams, 'rotate' | 'crop'>>>;
   saveEdit(id: string, edit: EditParams): Promise<Saved>;
   storage(): Promise<{ total: number; free: number }>;
+  /** Downloads the update APK; returns its local path. Progress via the onUpdateProgress event. */
+  downloadUpdate(url: string): Promise<string>;
+  canInstallUpdates(): boolean;
+  openInstallPermission(): void;
+  /** Opens Android's install/update confirmation. */
+  installUpdate(path: string): void;
 }
 
 export default requireNativeModule<CullaNativeModule>('CullaNative');

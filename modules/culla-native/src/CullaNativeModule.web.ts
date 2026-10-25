@@ -92,7 +92,7 @@ function build(): Fake[] {
   return out.sort((a, b) => b.taken - a.taken);
 }
 
-class CullaNativeModule extends NativeModule<{}> {
+class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { progress: number }) => void }> {
   private items = build();
   private bin: Fake[] = [];
   private access: Access = 'none';
@@ -147,6 +147,13 @@ class CullaNativeModule extends NativeModule<{}> {
   async compress(id: string) { await new Promise(r => setTimeout(r, 150)); return this.copy(id, 0.42, 'c'); }
   async autoParams() { return { brightness: 0.12, contrast: 0.2, saturation: 0.1, warmth: 0 }; }
   async saveEdit(id: string, _e: EditParams) { return this.copy(id, 0.9, 'e'); }
+  async downloadUpdate(_url: string) {
+    for (let i = 1; i <= 10; i++) { await new Promise(r => setTimeout(r, 60)); this.emit('onUpdateProgress', { progress: i / 10 }); }
+    return '/cache/updates/culla-update.apk';
+  }
+  canInstallUpdates() { return true; }
+  openInstallPermission() {}
+  installUpdate(path: string) { (globalThis as any).__installed = path; }
   async storage() {
     const used = this.items.reduce((s, f) => s + f.size, 0);
     return { total: 128e9, free: 128e9 - 96e9 - used };

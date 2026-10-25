@@ -1,0 +1,3 @@
+- In-app updates: Culla tells you when a new version is ready, shows what's new, and installs it without visiting GitHub
+- Settings → Check for updates checks any time
+- Zoom and swipe through photos in Blurry, Eyes closed and every other list (from build 16)

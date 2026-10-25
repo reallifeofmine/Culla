@@ -112,5 +112,6 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}-build${{ github.run_number }}"
           mv app-release.apk culla.apk
-          gh release create "$TAG" culla.apk --title "Culla $VERSION (build ${{ github.run_number }})" \
-            --notes "Install: open this page on your Android phone and tap culla.apk." --latest
+          # RELEASE_NOTES.md holds this build's "what's new" dot points; the app shows them in its update popup.
+          { cat RELEASE_NOTES.md; echo; echo "First install: open this page on your Android phone and tap culla.apk. After that, Culla updates itself."; } > notes.md
+          gh release create "$TAG" culla.apk --title "Culla $VERSION (build ${{ github.run_number }})" --notes-file notes.md --latest
