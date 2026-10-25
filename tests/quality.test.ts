@@ -20,7 +20,7 @@ const jitter = (v: number[], amt: number, s: number) => v.map((x, i) => Math.max
 test('calibrated flags: sharp photo clean, blur/noise/dark/accidental detected', () => {
   assert.deepEqual(flags(base()), []);
   assert.deepEqual(flags(base({ sharp: 23.6 })), ['blurry']);           // astronaut, gaussian 1.5
-  assert.deepEqual(flags(base({ v: 2, noise: 4.5, lum: 60, sharp: 1600 })), ['noisy']); // dark scene with grain
+  assert.deepEqual(flags(base({ v: 3, iso: 3200, noise: 3.2, lum: 60, sharp: 1600 })), ['noisy']); // night shot
   assert.deepEqual(flags(base({ lum: 0.3 * 0 + 134.6, std: 0.5, sharp: 0.3 })), ['accidental']); // finger over lens
   assert.deepEqual(flags(base({ lum: 12.9, std: 5, sharp: 0.2, clipLow: 0.81 })), ['accidental']); // pocket
   assert.deepEqual(flags(base({ lum: 24, std: 22, clipLow: 0.7, sharp: 120 })), ['dark']);
@@ -145,4 +145,17 @@ test('eyes closed needs both eyes clearly shut on a face big enough to judge', (
   assert.deepEqual(flags(base({ faces: [face({ px: 300, leftEye: 0.02, rightEye: 0.9 })] })), [], 'one eye / wink');
   assert.deepEqual(flags(base({ faces: [face({ px: 80, leftEye: 0.01, rightEye: 0.01 })] })), [], 'face too small');
   assert.deepEqual(flags(base({ faces: [face({ px: 300, leftEye: 0.02, rightEye: 0.03, eyeLum: 0.95 })] })), ['eyesClosed']);
+});
+
+test('noise is a low-light problem: daylight texture never counts', () => {
+  // Ferns, forest, grass, rock: textured at full resolution but shot at low ISO in daylight.
+  for (const lum of [70, 100, 140]) assert.deepEqual(flags(base({ v: 3, iso: 50, noise: 6, lum })), [], `ISO 50, lum ${lum}`);
+  // Older analyses without ISO: bright scenes are not judged for noise.
+  assert.deepEqual(flags(base({ v: 2, noise: 6, lum: 100 })), []);
+  // Night and dim indoor shots with visible noise in smooth areas.
+  assert.deepEqual(flags(base({ v: 3, iso: 1600, noise: 2.6, lum: 45 })), ['noisy']);
+  assert.deepEqual(flags(base({ v: 3, iso: 1600, noise: 1.2, lum: 45 })), [], 'clean night-mode shot');
+  // No camera info: only a genuinely dark, clearly noisy scene.
+  assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 50 })), ['noisy']);
+  assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 120 })), []);
 });

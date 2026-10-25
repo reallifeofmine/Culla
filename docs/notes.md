@@ -35,8 +35,10 @@ Everything runs on the phone; nothing is uploaded.
   user report: sharp beach/desert photos flagged); face blurry < 24 (14/40).
 - Eyes closed: BOTH eyes < 0.1 (0.05/0.2) on a face ≥120 px, not wearing sunglasses (eye-area brightness ÷
   face brightness < 0.55, or a Sunglasses/Goggles label). Small/squinting eyes and winks are not closed.
-- Grain: Immerkær per 32 px block on a full-res centre crop, 10th percentile (texture no longer counts).
-  Clean 0.2–0.9, σ5 noise ≈3, σ10 ≈4.5–6.4. Grainy > 3 (4.5/2) and only when lum < 110 unless > 2× threshold.
+- Noise (v3, label "Noisy"): a low-light problem only. With EXIF ISO: noisy if ISO ≥ 800 (1600/400) and smooth-area
+  noise > 2 (3/1.5). No EXIF (screenshots, chat copies): only lum < 70 and noise > 3 (4.5/2.5). Noise = Immerkær
+  per 32 px tile over five 320 px full-res crops (centre + quadrants), 10th percentile. User report: ferns, forest,
+  grass, rock, car fabric in daylight were flagged as grainy by the v2 rule (texture everywhere, no smooth area).
 - Accidental = featureless (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
 - Similar sets: sorted by time, 30-min window; join if similar to the set's first AND latest photo
   (prevents chaining); cosine ≥ 0.72 within 1 min (a blurred burst shot measured 0.76), 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;

@@ -1,2 +1,4 @@
-- Test update: checks that Culla can update itself from inside the app
-- After updating, Settings shows build 18
+- Noise detection fixed: textured daylight photos (leaves, grass, rocks, fabric) are no longer flagged
+- Noise is now only checked on low-light photos, using the camera's ISO setting, and measured in the smoothest background areas
+- "Grainy" is renamed "Noisy"; the category is now "Noisy or too dark"
+- Culla re-checks your photos once in the background to read each photo's camera settings

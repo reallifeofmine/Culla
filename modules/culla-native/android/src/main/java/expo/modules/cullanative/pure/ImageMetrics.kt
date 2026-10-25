@@ -63,6 +63,11 @@ object ImageMetrics {
    */
   fun flatNoise(g: IntArray, w: Int, h: Int, block: Int = 32): Double {
     if (w < block || h < block) return noiseSigma(g, w, h)
+    return smoothest(blockNoise(g, w, h, block))
+  }
+
+  /** Immerkær noise estimate for every [block]-pixel tile of the image. */
+  fun blockNoise(g: IntArray, w: Int, h: Int, block: Int = 32): List<Double> {
     val values = ArrayList<Double>()
     val tile = IntArray(block * block)
     var by = 0
@@ -75,8 +80,14 @@ object ImageMetrics {
       }
       by += block
     }
-    values.sort()
-    return values[(values.size * 0.1).toInt()]
+    return values
+  }
+
+  /** 10th percentile: the noise of the smoothest areas, where texture can't pass for noise. */
+  fun smoothest(values: List<Double>): Double {
+    if (values.isEmpty()) return 0.0
+    val sorted = values.sorted()
+    return sorted[(sorted.size * 0.1).toInt()]
   }
 
   data class Exposure(val mean: Double, val std: Double, val clipLow: Double, val clipHigh: Double, val entropy: Double)

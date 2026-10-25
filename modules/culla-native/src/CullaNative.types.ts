@@ -12,7 +12,7 @@ export type RawAnalysis = {
   id: string; error?: string;
   sharp: number; noise: number; lum: number; std: number; clipLow: number; clipHigh: number; entropy: number; colour: number;
   hash: string; emb: string | null; faces: RawFace[]; labels: { t: string; c: number }[]; text: string | null;
-  lat: number | null; lon: number | null; v?: number;
+  lat: number | null; lon: number | null; v?: number; iso?: number | null; exposure?: number | null;
 };
 
 export type Saved = { id: string; uri: string; size: number; w: number; h: number };

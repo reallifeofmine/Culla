@@ -159,7 +159,7 @@ class Analyzer(private val context: Context) {
     val emb = embed(small)
 
     val noise = sensorNoise(uri) ?: ImageMetrics.flatNoise(ImageMetrics.grey(pixels(big)), big.width, big.height)
-    val latLon = location(uri)
+    val exif = cameraInfo(uri)
 
     val result = mapOf(
       "sharp" to ImageMetrics.laplacianVariance(grey, small.width, small.height),
@@ -172,9 +172,10 @@ class Analyzer(private val context: Context) {
       "faces" to faceList,
       "labels" to labels,
       "text" to text,
-      "lat" to latLon?.get(0), "lon" to latLon?.get(1),
+      "lat" to exif.lat, "lon" to exif.lon,
+      "iso" to exif.iso, "exposure" to exif.exposure,
     )
-    Log.i(TAG, "analysed $uri sharp=${result["sharp"]} noise=$noise hash=$hash emb=${emb?.length ?: "none"} faces=${faceList.size} labels=${labels.size}")
+    Log.i(TAG, "analysed $uri sharp=${result["sharp"]} noise=$noise iso=${exif.iso} hash=$hash emb=${emb?.length ?: "none"} faces=${faceList.size} labels=${labels.size}")
     if (small != big) small.recycle()
     big.recycle()
     return result
@@ -196,29 +197,48 @@ class Analyzer(private val context: Context) {
     return if (skin > 0) eyes / skin else null
   }
 
-  /** Grain measured on a full-resolution centre crop (thumbnails hide grain), in its smoothest areas. */
+  /**
+   * Noise at full resolution (thumbnails average it away), sampled from five areas across the
+   * photo so smooth background (sky, walls, shadows) is likely included; only the smoothest
+   * tiles count, so leaves, rock and fabric texture don't pass for noise.
+   */
   @Suppress("DEPRECATION")
   private fun sensorNoise(uri: Uri): Double? = try {
     context.contentResolver.openInputStream(uri)?.use { input ->
       val dec = BitmapRegionDecoder.newInstance(input, false) ?: return null
-      val side = minOf(512, dec.width, dec.height)
-      val left = (dec.width - side) / 2
-      val top = (dec.height - side) / 2
-      val crop = dec.decodeRegion(Rect(left, top, left + side, top + side), null)
+      val side = minOf(320, dec.width / 2, dec.height / 2)
+      val tiles = ArrayList<Double>()
+      for ((fx, fy) in listOf(0.5 to 0.5, 0.25 to 0.25, 0.75 to 0.25, 0.25 to 0.75, 0.75 to 0.75)) {
+        val left = ((dec.width * fx).toInt() - side / 2).coerceIn(0, dec.width - side)
+        val top = ((dec.height * fy).toInt() - side / 2).coerceIn(0, dec.height - side)
+        val crop = software(dec.decodeRegion(Rect(left, top, left + side, top + side), null))
+        tiles.addAll(ImageMetrics.blockNoise(ImageMetrics.grey(pixels(crop)), crop.width, crop.height))
+        crop.recycle()
+      }
       dec.recycle()
-      val c = software(crop)
-      val v = ImageMetrics.flatNoise(ImageMetrics.grey(pixels(c)), c.width, c.height)
-      c.recycle()
-      v
+      ImageMetrics.smoothest(tiles)
     }
   } catch (e: Throwable) {
     null
   }
 
-  private fun location(uri: Uri): DoubleArray? = try {
-    context.contentResolver.openInputStream(MediaStore.setRequireOriginal(uri))?.use { ExifInterface(it).latLong }
-  } catch (e: Throwable) {
-    null
+  private class CameraInfo(val lat: Double?, val lon: Double?, val iso: Int?, val exposure: Double?)
+
+  /** Location, ISO and shutter time from the photo's EXIF (missing for screenshots and most chat images). */
+  private fun cameraInfo(uri: Uri): CameraInfo {
+    val exif = try {
+      context.contentResolver.openInputStream(MediaStore.setRequireOriginal(uri))?.use { ExifInterface(it) }
+    } catch (e: Throwable) {
+      null
+    } ?: try {
+      context.contentResolver.openInputStream(uri)?.use { ExifInterface(it) }
+    } catch (e: Throwable) {
+      null
+    } ?: return CameraInfo(null, null, null, null)
+    val ll = exif.latLong
+    val iso = exif.getAttributeInt(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY, 0).takeIf { it > 0 }
+    val exposure = exif.getAttributeDouble(ExifInterface.TAG_EXPOSURE_TIME, 0.0).takeIf { it > 0 }
+    return CameraInfo(ll?.get(0), ll?.get(1), iso, exposure)
   }
 
   fun readText(uri: Uri): String? {
@@ -234,7 +254,7 @@ class Analyzer(private val context: Context) {
     private const val INPUT = 224
     private const val MIN_FACE_PX = 120
     /** Bump when measurements change so photos are re-checked. */
-    const val ANALYSIS_VERSION = 2
+    const val ANALYSIS_VERSION = 3
     val THREADS = maxOf(2, minOf(3, Runtime.getRuntime().availableProcessors() / 2))
     private val DOC_LABELS = setOf("paper", "menu", "receipt", "poster", "newspaper", "document", "whiteboard", "handwriting", "text", "book", "business card", "envelope")
   }

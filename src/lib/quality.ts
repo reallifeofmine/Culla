@@ -28,10 +28,13 @@ export type Analysis = {
   lat: number | null; lon: number | null;
   /** measurement version (missing = 1) */
   v?: number;
+  /** camera ISO and shutter time in seconds from EXIF (v3+; missing for screenshots and chat images) */
+  iso?: number | null;
+  exposure?: number | null;
 };
 
 /** Photos measured with an older version are re-checked in the background. */
-export const ANALYSIS_VERSION = 2;
+export const ANALYSIS_VERSION = 3;
 
 export type Media = {
   id: string;
@@ -51,13 +54,24 @@ export type Flag = 'blurry' | 'eyesClosed' | 'noisy' | 'dark' | 'bright' | 'acci
 export type Sensitivity = 'relaxed' | 'normal' | 'strict';
 
 export const FLAG_LABEL: Record<Flag, string> = {
-  blurry: 'Blurry', eyesClosed: 'Eyes closed', noisy: 'Grainy', dark: 'Too dark', bright: 'Washed out', accidental: 'Accidental',
+  blurry: 'Blurry', eyesClosed: 'Eyes closed', noisy: 'Noisy', dark: 'Too dark', bright: 'Washed out', accidental: 'Accidental',
 };
 
 const BLUR = { relaxed: 22, normal: 40, strict: 70 };
 const FACE_BLUR = { relaxed: 14, normal: 24, strict: 40 };
-// Grain in the smoothest areas at full resolution: clean photos 0.2–0.9, visible grain 3+.
-const NOISE = { relaxed: 4.5, normal: 3, strict: 2 };
+// Noise is a low-light problem (high ISO). Daylight photos are never judged for it, whatever
+// their texture. Noise is measured in the smoothest areas at full resolution: clean 0.2–0.9,
+// visible noise 2–3+.
+const NOISE_ISO = { relaxed: 1600, normal: 800, strict: 400 };
+const NOISE = { relaxed: 3, normal: 2, strict: 1.5 };
+// No camera info (screenshots, chat copies): only genuinely dark scenes, with a higher bar.
+const NOISE_DARK = { relaxed: 4.5, normal: 3, strict: 2.5 };
+
+function noisy(a: Analysis, s: Sensitivity): boolean {
+  if ((a.v ?? 1) < 2) return false;
+  if (a.iso != null) return a.iso >= NOISE_ISO[s] && a.noise > NOISE[s];
+  return a.lum < 70 && a.noise > NOISE_DARK[s];
+}
 const EYES_SHUT = { relaxed: 0.05, normal: 0.1, strict: 0.2 };
 
 const version = (a: Analysis) => a.v ?? 1;
@@ -83,8 +97,7 @@ export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal')
   if (blurry) out.push('blurry');
   // Both eyes clearly shut. Small or squinting eyes and sunglasses don't count.
   if (a.faces.some(f => eyesJudgeable(a, f) && Math.max(f.leftEye!, f.rightEye!) < EYES_SHUT[s])) out.push('eyesClosed');
-  // Grain is high-ISO noise: judged on smooth areas, and only in darker scenes unless extreme.
-  if (version(a) >= 2 && a.noise > NOISE[s] && (a.lum < 110 || a.noise > NOISE[s] * 2)) out.push('noisy');
+  if (noisy(a, s)) out.push('noisy');
   if (a.lum < 28 && a.clipLow > 0.6) out.push('dark');
   if (a.lum > 225 && a.clipHigh > 0.45) out.push('bright');
   return out;

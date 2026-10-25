@@ -14,7 +14,7 @@ const INFO: Record<string, { title: string; note: string; preselect: boolean }> 
   accidental: { title: 'Accidental shots', note: 'Black frames, pocket shots and photos of fingers. Almost always safe to delete.', preselect: true },
   blurry: { title: 'Blurry', note: 'Out of focus or shaken. Check before deleting — some may be the only photo of a moment.', preselect: false },
   eyesClosed: { title: 'Eyes closed', note: 'Someone blinked. If it’s part of a set, the set view already picks a better one.', preselect: false },
-  exposure: { title: 'Grainy or too dark', note: 'Very grainy, very dark or washed-out photos.', preselect: false },
+  exposure: { title: 'Noisy or too dark', note: 'Low-light photos with visible noise (night and dim indoor shots), and photos too dark or washed out to see.', preselect: false },
   screenshots: { title: 'Screenshots', note: 'Often only needed for a day. Oldest first.', preselect: false },
   whatsapp: { title: 'WhatsApp images', note: 'Photos saved from chats. Oldest first.', preselect: false },
   largeVideos: { title: 'Large videos', note: 'Videos over 100 MB, largest first.', preselect: false },

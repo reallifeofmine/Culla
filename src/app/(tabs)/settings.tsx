@@ -9,7 +9,7 @@ import { type, useTheme } from '../../theme';
 const LEVELS: { key: Sensitivity; title: string; note: string }[] = [
   { key: 'relaxed', title: 'Relaxed', note: 'Only flags clearly bad photos.' },
   { key: 'normal', title: 'Normal', note: 'Recommended.' },
-  { key: 'strict', title: 'Strict', note: 'Also flags slightly soft or grainy photos.' },
+  { key: 'strict', title: 'Strict', note: 'Also flags slightly soft or noisy photos.' },
 ];
 
 export default function Settings() {
