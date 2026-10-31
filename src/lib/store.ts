@@ -2,9 +2,9 @@
 // (similar groups, issue lists, albums). Screens subscribe with useStore().
 import { useSyncExternalStore } from 'react';
 import { AppState, Platform } from 'react-native';
-import { Culla, toAnalysis, toMedia } from './native';
-import type { RawAnalysis } from '../../modules/culla-native';
-import { ANALYSIS_VERSION, issueFlags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
+import { Culla, toAnalysis, toFaces, toMedia } from './native';
+import type { RawAnalysis, RawFaces } from '../../modules/culla-native';
+import { ANALYSIS_VERSION, FACE_VERSION, issueFlags, groupSimilar, albumsFor, type Analysis, type Flag, type Group, type Media, type Sensitivity, type AlbumKey } from './quality';
 import { persist } from './persist';
 
 export type Item = Media & { expires: number; name: string };
@@ -111,7 +111,7 @@ export function startScan() {
   if (state.scanning || state.access === 'none') return;
   // New photos and ones measured by an older version (they keep their old results meanwhile).
   const todo = state.media.filter(m => m.type === 'photo' && (!m.a || (m.a.v ?? 1) < ANALYSIS_VERSION)).sort((a, b) => b.taken - a.taken);
-  if (!todo.length) return;
+  if (!todo.length) { startFaceCheck(); return; }
   const token = ++scanToken;
   set({ scanning: true, paused: false, scanError: null });
   (async () => {
@@ -150,6 +150,48 @@ export function startScan() {
       }
     }
     if (token === scanToken) set({ scanning: false });
+    derive(true);
+    if (token === scanToken && !state.paused) startFaceCheck();
+  })();
+}
+
+/**
+ * Faces-only re-check of photos in similar sets measured by an older face check, so the best
+ * pick knows which way people face. Runs quietly after the main check; results improve as it goes.
+ */
+let faceChecking = false;
+function startFaceCheck() {
+  if (faceChecking || state.scanning || state.paused) return;
+  const inSets = new Set(state.groups.flatMap(g => g.ids));
+  const todo = [...inSets].map(id => state.byId.get(id)).filter(m => m?.a && (m.a.fv ?? 1) < FACE_VERSION) as Item[];
+  if (!todo.length) return;
+  const token = scanToken;
+  faceChecking = true;
+  (async () => {
+    let failures = 0;
+    for (let i = 0; i < todo.length && failures < 5; i += BATCH) {
+      if (token !== scanToken || state.paused) break;
+      const batch = todo.slice(i, i + BATCH).filter(m => state.byId.has(m.id) && m.a);
+      if (!batch.length) continue;
+      try {
+        const res: RawFaces[] = JSON.parse(await Culla.analyzeFaces(batch.map(m => m.id)));
+        const ok: [string, Analysis][] = [];
+        for (const r of res) {
+          const m = state.byId.get(r.id);
+          if (r.error || !m?.a) { if (r.error) console.error('Culla faces', r.id, r.error); continue; }
+          m.a = { ...m.a, faces: toFaces(r.faces), fv: r.fv ?? FACE_VERSION };
+          saved?.set(r.id, m.a);
+          ok.push([r.id, m.a]);
+        }
+        await persist.save(ok);
+        failures = ok.length ? 0 : failures + 1;
+        derive();
+      } catch (e) {
+        console.error('Culla faces batch', e);
+        failures++;
+      }
+    }
+    faceChecking = false;
     derive(true);
   })();
 }

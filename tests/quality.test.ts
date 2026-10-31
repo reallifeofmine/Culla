@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flags, issueFlags, isScreenshot, keepScore, groupSimilar, decodeEmbedding, cosine, hamming, albumsFor, search, reasons, type Analysis, type Media, type Face } from '../src/lib/quality.ts';
+import { flags, issueFlags, isScreenshot, keepScore, rankSet, bestReasons, groupSimilar, decodeEmbedding, cosine, hamming, albumsFor, search, reasons, type Analysis, type Media, type Face } from '../src/lib/quality.ts';
 
 const enc = (v: number[]) => Buffer.from(Int8Array.from(v).buffer).toString('base64');
 const base = (o: Partial<Analysis> = {}): Analysis => ({
@@ -185,4 +185,40 @@ test('no washed-out label: white backgrounds, products and screenshots are never
   assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }))), []);
   // A camera photo is still a camera photo even at a screen-like size, because it has ISO.
   assert.ok(!isScreenshot(media(base({ v: 3, iso: 50, ...white }), { w: 1080, h: 2340 })));
+});
+
+test('set 22: the shot of her facing the camera and smiling beats a brighter profile shot', () => {
+  // Full-length shots on a cliff: small face, sunglasses. Photo 1 is in profile looking out to sea,
+  // with a brighter, bluer sky; 2, 6, 8 and 9 face the camera, smiling.
+  const t0 = Date.UTC(2024, 8, 20, 4, 40);
+  const her = (yaw: number | null, smile: number | null) => [face({ w: 0.05, px: 40, sharp: -1, leftEye: null, rightEye: null, smile, eyeLum: 0.3, yaw, pitch: 3 })];
+  const shot = (i: number, faces: Face[], o: Partial<Analysis> = {}) =>
+    media(base({ v: 3, fv: 2, iso: 50, sharp: 700 + i * 13, faces, ...o }), { taken: t0 + i * 4000, w: 3000, h: 4000 });
+  const set = [
+    shot(1, her(-62, 0.1), { lum: 140, colour: 95, sharp: 1100 }), // profile, hand on head
+    shot(2, her(5, 0.7)),
+    shot(3, her(28, 0.4)),
+    shot(4, [], { lum: 135, colour: 90 }),                          // turned away: no face found
+    shot(5, her(35, 0.3)),
+    shot(6, her(-3, 0.85)),
+    shot(7, her(-55, 0.2)),
+    shot(8, her(8, 0.75)),
+    shot(9, her(10, 0.6)),
+  ];
+  const { best, scores } = rankSet(set);
+  assert.ok([1, 5, 7, 8].includes(set.indexOf(best)), `best was photo ${set.indexOf(best) + 1}`);
+  assert.equal(set.indexOf(best), 5, 'photo 6: facing the camera with the biggest smile');
+  for (const i of [0, 3, 6]) assert.ok(scores.get(set[i].id)! < scores.get(set[1].id)! - 20, `photo ${i + 1} well behind`);
+  assert.deepEqual(bestReasons(best, set), ['Facing camera', 'Smiling']);
+  assert.ok(reasons(set[0], best, 'normal', set).includes('Looking away'));
+});
+
+test('without people, sharpness and exposure decide; brightness alone does not', () => {
+  const t0 = Date.UTC(2026, 1, 1);
+  const a = media(base({ v: 3, sharp: 900, lum: 120 }), { taken: t0 });
+  const b = media(base({ v: 3, sharp: 900, lum: 160, colour: 110 }), { taken: t0 + 1000 }); // brighter, more colourful
+  const c = media(base({ v: 3, sharp: 25 }), { taken: t0 + 2000 });                            // soft
+  const r = rankSet([a, b, c]);
+  assert.ok(Math.abs(r.scores.get(a.id)! - r.scores.get(b.id)!) < 1.5, 'well-exposed sharp shots tie');
+  assert.ok(r.scores.get(c.id)! < r.scores.get(a.id)! - 15, 'the soft shot loses clearly');
 });

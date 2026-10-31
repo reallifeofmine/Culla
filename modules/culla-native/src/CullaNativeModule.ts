@@ -7,6 +7,8 @@ declare class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { p
   listMedia(trashed: boolean): Promise<MediaColumns>;
   /** JSON array of RawAnalysis. */
   analyze(ids: string[], readText: boolean[]): Promise<string>;
+  /** Faces-only re-check: JSON array of { id, faces, fv } or { id, error }. */
+  analyzeFaces(ids: string[]): Promise<string>;
   readText(id: string): Promise<string | null>;
   /** Shows Android's confirmation; resolves true if the user agreed. */
   trash(ids: string[]): Promise<boolean>;

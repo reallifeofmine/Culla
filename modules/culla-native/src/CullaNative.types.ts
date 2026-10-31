@@ -6,14 +6,16 @@ export type MediaColumns = {
   mime: string[]; bucket: string[]; path: string[]; duration: number[]; expires: number[]; name: string[];
 };
 
-export type RawFace = { x: number; y: number; w: number; h: number; leftEye: number | null; rightEye: number | null; smile: number | null; sharp: number; px?: number; eyeLum?: number | null };
+export type RawFace = { x: number; y: number; w: number; h: number; leftEye: number | null; rightEye: number | null; smile: number | null; sharp: number; px?: number; eyeLum?: number | null; yaw?: number; pitch?: number; roll?: number };
 
 export type RawAnalysis = {
   id: string; error?: string;
   sharp: number; noise: number; lum: number; std: number; clipLow: number; clipHigh: number; entropy: number; colour: number;
   hash: string; emb: string | null; faces: RawFace[]; labels: { t: string; c: number }[]; text: string | null;
-  lat: number | null; lon: number | null; v?: number; iso?: number | null; exposure?: number | null;
+  lat: number | null; lon: number | null; v?: number; iso?: number | null; exposure?: number | null; fv?: number;
 };
+
+export type RawFaces = { id: string; error?: string; faces?: RawFace[]; fv?: number };
 
 export type Saved = { id: string; uri: string; size: number; w: number; h: number };
 

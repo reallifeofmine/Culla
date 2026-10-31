@@ -108,6 +108,16 @@ class CullaNativeModule : Module() {
       }.start()
     }
 
+    AsyncFunction("analyzeFaces") { ids: List<String>, promise: Promise ->
+      Thread {
+        try {
+          promise.resolve(JSONArray(analyzer.facesBatch(ids).map { JSONObject(it) }).toString())
+        } catch (e: Throwable) {
+          promise.reject("E_ANALYZE", e.stackTraceToString().take(1500), e)
+        }
+      }.start()
+    }
+
     AsyncFunction("readText") { id: String, promise: Promise ->
       background(promise) { analyzer.readText(uris(listOf(id)).first()) ?: "" }
     }

@@ -1,2 +1,4 @@
-- "Washed out" label removed: photos with white backgrounds, like product shots, are no longer flagged
-- "Noisy" now only flags photos taken at ISO 1600 or higher
+- Smarter best pick: in photos of people, Culla now prefers shots where they face the camera and smile, instead of the brightest or most colourful shot
+- Faces that are small in the frame or wearing sunglasses are now recognised and judged
+- Each set shows why its best photo was picked, e.g. "Facing camera · Smiling"
+- Photos in similar sets get a quick one-off re-check in the background to read which way faces are turned

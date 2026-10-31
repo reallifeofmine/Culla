@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-na
 import { ActionBar } from '../../components/ActionBar';
 import { Button, Empty, Pill } from '../../components/ui';
 import { bytes, day, time } from '../../lib/format';
-import { keepScore, reasons } from '../../lib/quality';
+import { bestReasons, rankSet, reasons } from '../../lib/quality';
 import { sortGroups, trash, useStore } from '../../lib/store';
 import { ZoomViewer } from '../../components/ZoomViewer';
 import { type, useTheme } from '../../theme';
@@ -34,10 +34,12 @@ export default function GroupReview() {
   useEffect(() => { if (g) nav.setOptions({ title: `Set ${index + 1} of ${groups.length}` }); }, [index, groups.length]);
 
   // The suggested pick first, then the rest from best to worst.
-  const items = useMemo(() => (g
-    ? (g.ids.map(x => byId.get(x)).filter(Boolean) as NonNullable<ReturnType<typeof byId.get>>[])
-      .sort((a, b) => (a.id === g.best ? -1 : b.id === g.best ? 1 : keepScore(b) - keepScore(a)))
-    : []), [g, byId]);
+  const { items, scores } = useMemo(() => {
+    if (!g) return { items: [], scores: new Map<string, number>() };
+    const ms = g.ids.map(x => byId.get(x)).filter(Boolean) as NonNullable<ReturnType<typeof byId.get>>[];
+    const { scores } = rankSet(ms);
+    return { items: ms.sort((a, b) => (a.id === g.best ? -1 : b.id === g.best ? 1 : scores.get(b.id)! - scores.get(a.id)!)), scores };
+  }, [g, byId]);
   if (!g) return <Empty icon="checkmark-done" title="All done" body="This set has been cleaned up."><Button title="Back to sets" onPress={() => router.back()} /></Empty>;
 
   const best = byId.get(bestId) ?? byId.get(g.best)!;
@@ -69,7 +71,7 @@ export default function GroupReview() {
           style={{ borderRadius: 18, overflow: 'hidden', backgroundColor: c.raised }}>
           <Image source={{ uri: hero.uri }} style={{ width: '100%', aspectRatio: hero.w && hero.h ? Math.max(0.75, Math.min(1.6, hero.w / hero.h)) : 4 / 3 }} contentFit="contain" />
           <View style={{ position: 'absolute', top: 10, left: 10 }}>
-            <Pill label={hero.id === best.id ? '★ Best of this set' : heroGone ? 'Will be deleted' : 'Keeping'} tone={hero.id === best.id ? 'good' : heroGone ? 'bad' : 'neutral'} />
+            <Pill label={hero.id === best.id ? ['★ Best of this set', ...(best.id === g.best ? bestReasons(best, items) : [])].join(' · ') : heroGone ? 'Will be deleted' : 'Keeping'} tone={hero.id === best.id ? 'good' : heroGone ? 'bad' : 'neutral'} />
           </View>
           <View style={{ position: 'absolute', bottom: 10, right: 10, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.overlay, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 }}>
             <Ionicons name="expand" size={14} color="#fff" /><Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Tap to zoom</Text>
@@ -85,7 +87,7 @@ export default function GroupReview() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {items.map(m => {
             const gone = remove.has(m.id);
-            const why = m.id === best.id ? ['Best'] : reasons(m, best, sens);
+            const why = m.id === best.id ? ['Best', ...(best.id === g.best ? bestReasons(best, items) : ['your pick'])] : reasons(m, best, sens, items);
             const shown = m.id === hero.id;
             return (
               <Pressable key={m.id} onPress={() => setViewing(m.id)} accessibilityLabel={`Show larger. ${gone ? 'Will be deleted' : 'Keeping'}: ${why.join(', ')}`}
@@ -97,7 +99,7 @@ export default function GroupReview() {
                 </Pressable>
                 <View style={{ padding: 6, gap: 2 }}>
                   <Text style={[type.tiny, { color: gone ? c.danger : c.accent, fontWeight: '800' }]}>{gone ? 'Delete' : m.id === best.id ? '★ Keep' : 'Keep'}</Text>
-                  <Text style={[type.tiny, { color: c.muted }]} numberOfLines={1}>{why.join(' · ')} · {Math.round(keepScore(m))}</Text>
+                  <Text style={[type.tiny, { color: c.muted }]} numberOfLines={2}>{why.join(' · ')} · {Math.round(scores.get(m.id) ?? 0)}</Text>
                 </View>
               </Pressable>
             );

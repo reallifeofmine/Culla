@@ -49,7 +49,16 @@ Everything runs on the phone; nothing is uploaded.
 - Similar sets: sorted by time, 30-min window; join if similar to the set's first AND latest photo
   (prevents chaining); cosine ≥ 0.72 within 1 min (a blurred burst shot measured 0.76), 0.86 within 10 min, 0.93 beyond; dHash ≤ 5 = same picture;
   shapes (aspect ratio) must match. Exact duplicates (same dHash) join across any time (WhatsApp copies).
-- Best pick = keepScore (eyes, smile, face sharpness, sharpness, exposure, noise). Everything else pre-ticked.
+- Best pick = rankSet(): judged across the set. If any shot shows people (subjects = faces ≥ 40% of the
+  biggest, ≥ 20 px): 30 facing camera (|yaw| ≤ 12° → 1, ≥ 50° → 0) + 20 smile + 10 everyone in shot + 10 eyes
+  (0.7 neutral when sunglasses/too small) + 15 sharpness + 10 exposure + 5 noise. Otherwise 55 sharpness + 30
+  exposure + 15 noise. Sharpness saturates at ~250 and exposure only penalises clipping/very dark/bright, so
+  sharp, well-exposed shots tie and the person decides; tie-breakers < 1.5 pts (raw sharpness, pixels).
+  User report (set 22): a brighter profile shot beat four facing-camera, smiling shots because her small,
+  sunglassed face was ignored and colour/brightness decided. Reasons shown under the pick (bestReasons).
+- Face check v2 (FACE_VERSION): ML Kit accurate mode on a 1600 px copy, min face 3%, head angles
+  (yaw/pitch/roll); px reported in 1024 px-thumbnail units. Photos in similar sets with fv < 2 get a
+  faces-only re-check (analyzeFaces) after the main check. Everything else pre-ticked for deletion.
 - Scan order: newest first, batches of 6, saved to SQLite (`culla.db`) so nothing is analysed twice.
 
 ## In-app updates

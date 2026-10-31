@@ -41,10 +41,11 @@ class Analyzer(private val context: Context) {
 
   private val faces = FaceDetection.getClient(
     FaceDetectorOptions.Builder()
-      .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+      // Accurate mode on a 1600 px image finds small faces in full-length shots and turned heads.
+      .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
       .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
       .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-      .setMinFaceSize(0.05f)
+      .setMinFaceSize(0.03f)
       .build()
   )
   private val labeler = ImageLabeling.getClient(ImageLabelerOptions.Builder().setConfidenceThreshold(0.55f).build())
@@ -122,34 +123,7 @@ class Analyzer(private val context: Context) {
     tiny.recycle()
 
     val image = InputImage.fromBitmap(big, 0)
-    val faceList = Tasks.await(faces.process(image), 20, TimeUnit.SECONDS).map { f ->
-      val r = Rect(f.boundingBox)
-      r.intersect(0, 0, big.width, big.height)
-      // Sharpness only when the face is big enough to judge without enlarging it (enlarging
-      // makes any face look soft). Faces wider than 160 px are scaled down to 160 px.
-      val faceSharp = if (r.width() >= MIN_FACE_PX && r.height() > 8) {
-        val crop = Bitmap.createBitmap(big, r.left, r.top, r.width(), r.height())
-        val fw = minOf(160, r.width())
-        val fh = maxOf(1, (r.height() * fw.toFloat() / r.width()).toInt())
-        val norm = if (fw == r.width()) crop else Bitmap.createScaledBitmap(crop, fw, fh, true)
-        val v = ImageMetrics.laplacianVariance(ImageMetrics.grey(pixels(norm)), fw, fh)
-        if (norm != crop) norm.recycle()
-        crop.recycle()
-        v
-      } else -1.0
-      // Eye brightness relative to the face: sunglasses make the eye areas much darker than skin.
-      val eyeLum = eyeBrightness(big, r, f.getLandmark(FaceLandmark.LEFT_EYE)?.position, f.getLandmark(FaceLandmark.RIGHT_EYE)?.position)
-      mapOf(
-        "x" to r.left.toDouble() / big.width, "y" to r.top.toDouble() / big.height,
-        "w" to r.width().toDouble() / big.width, "h" to r.height().toDouble() / big.height,
-        "leftEye" to f.leftEyeOpenProbability?.toDouble(),
-        "rightEye" to f.rightEyeOpenProbability?.toDouble(),
-        "smile" to f.smilingProbability?.toDouble(),
-        "sharp" to faceSharp,
-        "px" to r.width(),
-        "eyeLum" to eyeLum,
-      )
-    }
+    val faceList = detectFaces(uri)
     val labels = Tasks.await(labeler.process(image), 20, TimeUnit.SECONDS).map { mapOf("t" to it.text, "c" to it.confidence.toDouble()) }
     val documentish = labels.any { (it["t"] as String).lowercase() in DOC_LABELS }
     val text = if (readText || documentish) {
@@ -170,6 +144,7 @@ class Analyzer(private val context: Context) {
       "emb" to emb,
       "v" to ANALYSIS_VERSION,
       "faces" to faceList,
+      "fv" to FACE_VERSION,
       "labels" to labels,
       "text" to text,
       "lat" to exif.lat, "lon" to exif.lon,
@@ -181,9 +156,67 @@ class Analyzer(private val context: Context) {
     return result
   }
 
+  /**
+   * Faces with eyes, smile, sharpness and head angle, found on a 1600 px copy. Sizes are reported
+   * in 1024 px-thumbnail pixels so thresholds stay the same as before.
+   */
+  fun detectFaces(uri: Uri): List<Map<String, Any?>> {
+    val b = software(context.contentResolver.loadThumbnail(uri, Size(FACE_SIDE, FACE_SIDE), null))
+    try {
+      val toBase = 1024.0 / maxOf(b.width, b.height)
+      val minPx = (MIN_FACE_PX / toBase).toInt()
+      return Tasks.await(faces.process(InputImage.fromBitmap(b, 0)), 30, TimeUnit.SECONDS).map { f ->
+        val r = Rect(f.boundingBox)
+        r.intersect(0, 0, b.width, b.height)
+        // Sharpness only when the face is big enough to judge without enlarging it (enlarging
+        // makes any face look soft). Faces wider than 160 px are scaled down to 160 px.
+        val faceSharp = if (r.width() >= minPx && r.height() > 8) {
+          val crop = Bitmap.createBitmap(b, r.left, r.top, r.width(), r.height())
+          val fw = minOf(160, r.width())
+          val fh = maxOf(1, (r.height() * fw.toFloat() / r.width()).toInt())
+          val norm = if (fw == r.width()) crop else Bitmap.createScaledBitmap(crop, fw, fh, true)
+          val v = ImageMetrics.laplacianVariance(ImageMetrics.grey(pixels(norm)), fw, fh)
+          if (norm != crop) norm.recycle()
+          crop.recycle()
+          v
+        } else -1.0
+        // Eye brightness relative to the face: sunglasses make the eye areas much darker than skin.
+        val eyeLum = if (r.width() >= minPx) eyeBrightness(b, r, f.getLandmark(FaceLandmark.LEFT_EYE)?.position, f.getLandmark(FaceLandmark.RIGHT_EYE)?.position) else null
+        mapOf(
+          "x" to r.left.toDouble() / b.width, "y" to r.top.toDouble() / b.height,
+          "w" to r.width().toDouble() / b.width, "h" to r.height().toDouble() / b.height,
+          "leftEye" to f.leftEyeOpenProbability?.toDouble(),
+          "rightEye" to f.rightEyeOpenProbability?.toDouble(),
+          "smile" to f.smilingProbability?.toDouble(),
+          "sharp" to faceSharp,
+          "px" to (r.width() * toBase).roundToInt(),
+          "eyeLum" to eyeLum,
+          "yaw" to f.headEulerAngleY.toDouble(), "pitch" to f.headEulerAngleX.toDouble(), "roll" to f.headEulerAngleZ.toDouble(),
+        )
+      }
+    } finally {
+      b.recycle()
+    }
+  }
+
+  /** Faces-only re-check for photos in similar sets (results carry the face check version). */
+  fun facesBatch(ids: List<String>): List<Map<String, Any?>> {
+    val uris = MediaQueries.uris(context, ids)
+    val jobs = ids.indices.map { i ->
+      workers.submit(Callable {
+        try {
+          mapOf("id" to ids[i], "faces" to detectFaces(uris[i]), "fv" to FACE_VERSION)
+        } catch (e: Throwable) {
+          mapOf("id" to ids[i], "error" to e.stackTraceToString().take(800))
+        }
+      })
+    }
+    return jobs.map { it.get(60, TimeUnit.SECONDS) }
+  }
+
   /** Mean eye-area brightness divided by mean face brightness (null if landmarks are missing). */
   private fun eyeBrightness(b: Bitmap, face: Rect, left: PointF?, right: PointF?): Double? {
-    if (left == null || right == null || face.width() < MIN_FACE_PX) return null
+    if (left == null || right == null) return null
     fun mean(cx: Int, cy: Int, half: Int): Double {
       val x0 = (cx - half).coerceIn(0, b.width - 1); val x1 = (cx + half).coerceIn(x0 + 1, b.width)
       val y0 = (cy - half).coerceIn(0, b.height - 1); val y1 = (cy + half).coerceIn(y0 + 1, b.height)
@@ -255,6 +288,9 @@ class Analyzer(private val context: Context) {
     private const val MIN_FACE_PX = 120
     /** Bump when measurements change so photos are re-checked. */
     const val ANALYSIS_VERSION = 3
+    /** Bump when face detection changes so photos in similar sets get a faces-only re-check. */
+    const val FACE_VERSION = 2
+    private const val FACE_SIDE = 1600
     val THREADS = maxOf(2, minOf(3, Runtime.getRuntime().availableProcessors() / 2))
     private val DOC_LABELS = setOf("paper", "menu", "receipt", "poster", "newspaper", "document", "whiteboard", "handwriting", "text", "book", "business card", "envelope")
   }

@@ -116,6 +116,11 @@ class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { progress:
     return JSON.stringify(ids.map(id => ({ id, ...this.items.find(f => f.id === id)!.a })));
   }
 
+  async analyzeFaces(ids: string[]): Promise<string> {
+    await new Promise(r => setTimeout(r, 40));
+    return JSON.stringify(ids.map(id => ({ id, faces: this.items.find(f => f.id === id)!.a.faces.map(f => ({ ...f, yaw: 4, pitch: 2, roll: 0 })), fv: 2 })));
+  }
+
   async readText() { return null; }
 
   async trash(ids: string[]) {

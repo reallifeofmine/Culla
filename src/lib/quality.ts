@@ -14,6 +14,8 @@ export type Face = {
   px?: number;
   /** eye-area brightness ÷ face brightness (v2+); sunglasses read well below 0.55 */
   eyeLum?: number | null;
+  /** head turn in degrees from ML Kit (face check v2+): yaw 0 = facing the camera, ±60+ = profile */
+  yaw?: number | null; pitch?: number | null; roll?: number | null;
 };
 
 export type Analysis = {
@@ -31,10 +33,14 @@ export type Analysis = {
   /** camera ISO and shutter time in seconds from EXIF (v3+; missing for screenshots and chat images) */
   iso?: number | null;
   exposure?: number | null;
+  /** face check version (missing = 1); v2 adds head angles and finds small faces */
+  fv?: number;
 };
 
 /** Photos measured with an older version are re-checked in the background. */
 export const ANALYSIS_VERSION = 3;
+/** Photos in similar sets whose faces were checked by an older version get a faces-only re-check. */
+export const FACE_VERSION = 2;
 
 export type Media = {
   id: string;
@@ -106,26 +112,92 @@ export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal')
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
 /** 0..100: how good a keeper this photo is. Used to pick the best of a similar set. */
-export function keepScore(m: Media): number {
+// ---------- best pick ----------
+// Judged across the whole set. When the set shows people, the person decides: facing the camera,
+// smiling, everyone in shot, eyes open. Sharpness and exposure only count when they are actually
+// worse (all sharp, well-exposed shots tie on them), so a slightly bluer sky never wins.
+// User report: a profile shot looking out to sea beat four shots of her facing the camera, smiling.
+
+/** The people the photo is of: faces at least 40% the size of the biggest one. */
+function subjects(a: Analysis): Face[] {
+  const px = a.faces.map(facePx);
+  const big = Math.max(0, ...px);
+  return big >= 20 ? a.faces.filter((f, i) => px[i] >= big * 0.4) : [];
+}
+const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / xs.length;
+/** 1 facing the camera (≤12° turn), 0 in profile (≥50°); unknown on older checks. */
+const facing = (f: Face) => f.yaw == null ? 0.5 : clamp(1 - (Math.abs(f.yaw) - 12) / 38) * clamp(1 - (Math.abs(f.pitch ?? 0) - 20) / 30);
+const sharpness = (v: number) => clamp((Math.log2(v + 1) - 3) / 5); // ~8 → 0, ≥250 → 1 (sharp enough)
+
+export type SetContext = { people: boolean; most: number };
+/** Whether the set is of people, and the most people seen in one shot. */
+export function setContext(ms: Media[]): SetContext {
+  const counts = ms.map(m => (m.a ? subjects(m.a).length : 0));
+  return { people: counts.some(n => n > 0), most: Math.max(0, ...counts) };
+}
+
+type Parts = { facing: number; smile: number; eyes: number; present: number; sharp: number; exposure: number };
+function parts(m: Media, ctx: SetContext): Parts | null {
   const a = m.a;
-  if (!a) return 0;
-  const sharp = clamp((Math.log2(a.sharp + 1) - 3) / 7); // 7 → 0, ~1000 → 1
-  const exposure = clamp(1 - Math.abs(a.lum - 120) / 140 - a.clipLow * 0.8 - a.clipHigh * 0.8);
-  const noise = version(a) >= 2 ? clamp(1 - (a.noise - 0.5) / 5) : 1;
-  const faces = a.faces.filter(f => eyesJudgeable(a, f));
-  let score: number;
-  if (faces.length) {
-    const eyes = faces.reduce((s, f) => s + Math.min(f.leftEye!, f.rightEye!), 0) / faces.length;
-    const smile = faces.reduce((s, f) => s + (f.smile ?? 0), 0) / faces.length;
-    const sized = faces.filter(faceSharpOk);
-    const faceSharp = sized.length ? clamp((Math.log2(Math.min(...sized.map(f => f.sharp)) + 1) - 3) / 6) : sharp;
-    score = 30 * eyes + 10 * smile + 20 * faceSharp + 15 * sharp + 15 * exposure + 10 * noise;
-  } else {
-    score = 45 * sharp + 30 * exposure + 15 * noise + 10 * clamp(a.colour / 60);
+  if (!a) return null;
+  const sharp = sharpness(a.sharp);
+  // Only a real exposure problem costs points: crushed shadows, blown highlights, very dark or bright.
+  const exposure = clamp(1 - Math.max(0, a.clipLow - 0.08) * 2.5 - Math.max(0, a.clipHigh - 0.08) * 2.5
+    - Math.max(0, 45 - a.lum) / 45 - Math.max(0, a.lum - 215) / 40);
+  const subs = subjects(a);
+  if (!ctx.people || !subs.length) return { facing: 0, smile: 0, eyes: 0, present: 0, sharp, exposure };
+  const sized = subs.filter(faceSharpOk);
+  const judge = subs.filter(f => eyesJudgeable(a, f));
+  return {
+    facing: mean(subs.map(facing)),
+    smile: mean(subs.map(f => f.smile ?? 0.3)),
+    // Sunglasses or small faces: eyes can't be judged, so they neither help nor hurt.
+    eyes: judge.length ? mean(judge.map(f => Math.min(f.leftEye!, f.rightEye!))) : 0.7,
+    present: Math.min(1, subs.length / Math.max(1, ctx.most)),
+    sharp: sized.length ? Math.min(sharp, sharpness(Math.min(...sized.map(f => f.sharp)) * 1.6)) : sharp,
+    exposure,
+  };
+}
+
+/** Keep score out of 100, judged against the photo's set (pass setContext of the set). */
+export function keepScore(m: Media, ctx: SetContext = setContext([m])): number {
+  const p = parts(m, ctx);
+  if (!p) return 0;
+  const noise = m.a && version(m.a) >= 2 ? clamp(1 - (m.a.noise - 1) / 4) : 1;
+  const score = ctx.people
+    ? 30 * p.facing + 20 * p.smile + 10 * p.present + 10 * p.eyes + 15 * p.sharp + 10 * p.exposure + 5 * noise
+    : 55 * p.sharp + 30 * p.exposure + 15 * noise;
+  // Tie-breakers worth under 1.5 points: raw sharpness, then more pixels.
+  const tie = clamp(Math.log2(m.a!.sharp + 1) / 11) + 0.4 * clamp((m.w * m.h) / 12e6);
+  return Math.round((score * 0.985 + tie) * 10) / 10; // never above 100
+}
+
+/** The set's best photo and its scores. */
+export function rankSet(ms: Media[]): { best: Media; scores: Map<string, number>; ctx: SetContext } {
+  const ctx = setContext(ms);
+  const scores = new Map(ms.map(m => [m.id, keepScore(m, ctx)]));
+  const best = ms.reduce((b, m) => (scores.get(m.id)! > scores.get(b.id)! ? m : b), ms[0]);
+  return { best, scores, ctx };
+}
+
+/** Why the pick won, in plain words (what it does better than most of the set). */
+export function bestReasons(best: Media, ms: Media[]): string[] {
+  const ctx = setContext(ms);
+  const bp = parts(best, ctx);
+  if (!bp) return [];
+  const others = ms.filter(m => m !== best).map(m => parts(m, ctx)).filter(Boolean) as Parts[];
+  const beats = (k: keyof Parts, min: number) => bp[k] >= min && others.length > 0 &&
+    others.filter(o => bp[k] - o[k] > 0.15).length >= others.length / 2;
+  const out: string[] = [];
+  if (ctx.people) {
+    if (beats('facing', 0.7)) out.push('Facing camera');
+    if (beats('smile', 0.5)) out.push('Smiling');
+    if (beats('present', 0.9)) out.push('Everyone in shot');
+    if (beats('eyes', 0.6) && bp.eyes !== 0.7) out.push('Eyes open');
   }
-  // Tie-breaker: more pixels.
-  score += clamp((m.w * m.h) / 12e6) * 2;
-  return Math.round(score * 10) / 10;
+  if (beats('sharp', 0.8)) out.push('Sharpest');
+  if (beats('exposure', 0.8)) out.push('Best exposed');
+  return out.slice(0, 2);
 }
 
 // ---------- similarity ----------
@@ -222,7 +294,7 @@ function buildGroups(items: Item[]): Group[] {
   }
   return all.filter(g => g.members.length > 1).map(g => {
     const ms = g.members.map(i => i.m);
-    const best = ms.reduce((b, m) => (keepScore(m) > keepScore(b) ? m : b), ms[0]);
+    const { best } = rankSet(ms);
     return {
       id: g.first.m.id,
       ids: ms.map(m => m.id),
@@ -234,10 +306,17 @@ function buildGroups(items: Item[]): Group[] {
 }
 
 /** Why a photo is suggested for deletion in its group, in plain words. */
-export function reasons(m: Media, best: Media, sens: Sensitivity = 'normal'): string[] {
+export function reasons(m: Media, best: Media, sens: Sensitivity = 'normal', set?: Media[]): string[] {
   const out = issueFlags(m, sens).map(f => FLAG_LABEL[f]);
   if (!out.length && m.a && best.a) {
-    if (m.a.sharp < best.a.sharp * 0.6) out.push('Less sharp');
+    const ctx = setContext(set ?? [m, best]);
+    const pm = parts(m, ctx), pb = parts(best, ctx);
+    if (ctx.people && pm && pb) {
+      if (pb.facing - pm.facing > 0.4) out.push('Looking away');
+      else if (pb.smile - pm.smile > 0.4) out.push('Less of a smile');
+      if (pb.present - pm.present > 0.3) out.push('Someone missing');
+    }
+    if (m.a.sharp < best.a.sharp * 0.6 && sharpness(m.a.sharp) < 0.9) out.push('Less sharp');
     const eyes = (x: Analysis) => Math.min(...x.faces.filter(f => eyesJudgeable(x, f)).map(f => Math.min(f.leftEye!, f.rightEye!)), 1);
     if (eyes(m.a) < eyes(best.a) - 0.3) out.push('Eyes half closed');
     if (!out.length) out.push('Similar shot');
