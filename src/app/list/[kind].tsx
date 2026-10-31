@@ -33,7 +33,7 @@ export default function List() {
     const pick = (ids: string[]) => ids.map(id => s.byId.get(id)).filter(Boolean) as Item[];
     switch (kind) {
       case 'accidental': case 'blurry': case 'eyesClosed': return pick(s.flagged[kind as Flag]);
-      case 'exposure': return pick([...new Set([...s.flagged.noisy, ...s.flagged.dark, ...s.flagged.bright])]);
+      case 'exposure': return pick([...new Set([...s.flagged.noisy, ...s.flagged.dark])]);
       case 'screenshots': case 'whatsapp': return pick(s.albums[kind]).sort((a, b) => a.taken - b.taken);
       case 'largeVideos': return s.media.filter(m => m.type === 'video' && m.size >= 100e6).sort((a, b) => b.size - a.size);
       case 'search': return search(s.media, q ?? '') as Item[];

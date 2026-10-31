@@ -50,19 +50,19 @@ export type Media = {
   a?: Analysis | null;
 };
 
-export type Flag = 'blurry' | 'eyesClosed' | 'noisy' | 'dark' | 'bright' | 'accidental';
+export type Flag = 'blurry' | 'eyesClosed' | 'noisy' | 'dark' | 'accidental';
 export type Sensitivity = 'relaxed' | 'normal' | 'strict';
 
 export const FLAG_LABEL: Record<Flag, string> = {
-  blurry: 'Blurry', eyesClosed: 'Eyes closed', noisy: 'Noisy', dark: 'Too dark', bright: 'Washed out', accidental: 'Accidental',
+  blurry: 'Blurry', eyesClosed: 'Eyes closed', noisy: 'Noisy', dark: 'Too dark', accidental: 'Accidental',
 };
 
 const BLUR = { relaxed: 22, normal: 40, strict: 70 };
 const FACE_BLUR = { relaxed: 14, normal: 24, strict: 40 };
-// Noise is a low-light problem (high ISO). Daylight photos are never judged for it, whatever
+// Noise is a low-light problem (ISO 1600+; user: lower ISOs are fine on modern phones). Daylight photos are never judged for it, whatever
 // their texture. Noise is measured in the smoothest areas at full resolution: clean 0.2–0.9,
 // visible noise 2–3+.
-const NOISE_ISO = { relaxed: 1600, normal: 800, strict: 400 };
+const NOISE_ISO = { relaxed: 3200, normal: 1600, strict: 1600 };
 const NOISE = { relaxed: 3, normal: 2, strict: 1.5 };
 // No camera info (screenshots, chat copies): only genuinely dark scenes, with a higher bar.
 const NOISE_DARK = { relaxed: 4.5, normal: 3, strict: 2.5 };
@@ -99,10 +99,7 @@ export function flags(a: Analysis | null | undefined, s: Sensitivity = 'normal')
   if (a.faces.some(f => eyesJudgeable(a, f) && Math.max(f.leftEye!, f.rightEye!) < EYES_SHUT[s])) out.push('eyesClosed');
   if (noisy(a, s)) out.push('noisy');
   if (a.lum < 28 && a.clipLow > 0.6) out.push('dark');
-  // Washed out = a blown-out photo with almost no detail left. A white page, receipt or
-  // whiteboard has readable text or real contrast, so it never counts.
-  const hasText = (a.text ?? '').replace(/\s+/g, '').length >= 20;
-  if (a.lum > 225 && a.clipHigh > 0.5 && a.std < 40 && !hasText) out.push('bright');
+  // No 'washed out' check: bright white backgrounds (products, documents, snow) are usually intended.
   return out;
 }
 

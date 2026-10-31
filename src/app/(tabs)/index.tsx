@@ -25,7 +25,7 @@ export default function Clean() {
       { key: 'accidental', icon: 'hand-left', title: 'Accidental shots', count: s.flagged.accidental.length, size: sizeOf(s.flagged.accidental), tone: 'danger', go: list('accidental'), hint: 'Pocket shots, black frames, fingers' },
       { key: 'blurry', icon: 'water', title: 'Blurry', count: s.flagged.blurry.length, size: sizeOf(s.flagged.blurry), tone: 'warn', go: list('blurry') },
       { key: 'eyesClosed', icon: 'eye-off', title: 'Eyes closed', count: s.flagged.eyesClosed.length, size: sizeOf(s.flagged.eyesClosed), tone: 'warn', go: list('eyesClosed') },
-      { key: 'noisy', icon: 'grid', title: 'Noisy or too dark', hint: 'Low-light photos', count: new Set([...s.flagged.noisy, ...s.flagged.dark, ...s.flagged.bright]).size, size: sizeOf([...new Set([...s.flagged.noisy, ...s.flagged.dark, ...s.flagged.bright])]), tone: 'warn', go: list('exposure') },
+      { key: 'noisy', icon: 'grid', title: 'Noisy or too dark', hint: 'Low-light photos', count: new Set([...s.flagged.noisy, ...s.flagged.dark]).size, size: sizeOf([...new Set([...s.flagged.noisy, ...s.flagged.dark])]), tone: 'warn', go: list('exposure') },
       { key: 'screenshots', icon: 'phone-portrait', title: 'Screenshots', count: s.albums.screenshots.length, size: sizeOf(s.albums.screenshots), tone: 'muted', go: list('screenshots') },
       { key: 'whatsapp', icon: 'logo-whatsapp', title: 'WhatsApp images', count: s.albums.whatsapp.length, size: sizeOf(s.albums.whatsapp), tone: 'muted', go: list('whatsapp') },
       { key: 'videos', icon: 'videocam', title: 'Large videos', count: bigVideos.length, size: sizeOf(bigVideos), tone: 'muted', go: list('largeVideos'), hint: 'Over 100 MB each' },

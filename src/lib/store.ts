@@ -28,7 +28,7 @@ type State = {
   version: number; // bumps on every change, for memo keys
 };
 
-const emptyFlags = (): Record<Flag, string[]> => ({ blurry: [], eyesClosed: [], noisy: [], dark: [], bright: [], accidental: [] });
+const emptyFlags = (): Record<Flag, string[]> => ({ blurry: [], eyesClosed: [], noisy: [], dark: [], accidental: [] });
 const emptyAlbums = (): Record<AlbumKey, string[]> => ({ people: [], selfies: [], pets: [], food: [], documents: [], nature: [], vehicles: [], screenshots: [], whatsapp: [], downloads: [], videos: [] });
 
 let state: State = {

@@ -1,3 +1,2 @@
-- "Washed out" no longer flags screenshots, documents or photos with white backgrounds; it now only catches genuinely blown-out camera photos
-- Screenshots saved outside the Screenshots folder are now recognised and moved to the Screenshots album
-- Blurry, eyes closed, noisy, dark and washed-out checks now apply only to photos taken with a camera, not screenshots or saved images
+- "Washed out" label removed: photos with white backgrounds, like product shots, are no longer flagged
+- "Noisy" now only flags photos taken at ISO 1600 or higher

@@ -35,13 +35,13 @@ Everything runs on the phone; nothing is uploaded.
   user report: sharp beach/desert photos flagged); face blurry < 24 (14/40).
 - Eyes closed: BOTH eyes < 0.1 (0.05/0.2) on a face ≥120 px, not wearing sunglasses (eye-area brightness ÷
   face brightness < 0.55, or a Sunglasses/Goggles label). Small/squinting eyes and winks are not closed.
-- Noise (v3, label "Noisy"): a low-light problem only. With EXIF ISO: noisy if ISO ≥ 800 (1600/400) and smooth-area
+- Noise (v3, label "Noisy"): a low-light problem only. With EXIF ISO: noisy if ISO ≥ 1600 (relaxed 3200, strict 1600; user rule) and smooth-area
   noise > 2 (3/1.5). No EXIF (screenshots, chat copies): only lum < 70 and noise > 3 (4.5/2.5). Noise = Immerkær
   per 32 px tile over five 320 px full-res crops (centre + quadrants), 10th percentile. User report: ferns, forest,
   grass, rock, car fabric in daylight were flagged as grainy by the v2 rule (texture everywhere, no smooth area).
 - Accidental = featureless (std < 8 & sharp < 3) or black frame (lum < 20 & std < 10).
-- Washed out ('bright'): lum > 225 AND clipHigh > 0.5 AND std < 40 AND no readable text (< 20 OCR chars).
-  User report: the old rule flagged screenshots, documents and white-background images.
+- No washed-out label (removed, user decision): white backgrounds (product shots, documents, snow) are usually
+  intended. "Too dark" stays (user: fine as is).
 - Which photos are judged: issueFlags() runs the checks only on camera photos (EXIF ISO present, or in the
   camera folder). Screenshots never get issue flags: Screenshots folder/bucket, or v3 with no ISO and a phone
   screen shape (short side in SCREEN_WIDTHS, ratio 1.9–2.4) → Screenshots album. Saved/chat images are not judged.

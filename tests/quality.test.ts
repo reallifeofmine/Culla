@@ -155,12 +155,15 @@ test('noise is a low-light problem: daylight texture never counts', () => {
   // Night and dim indoor shots with visible noise in smooth areas.
   assert.deepEqual(flags(base({ v: 3, iso: 1600, noise: 2.6, lum: 45 })), ['noisy']);
   assert.deepEqual(flags(base({ v: 3, iso: 1600, noise: 1.2, lum: 45 })), [], 'clean night-mode shot');
+  // Below ISO 1600 is never "noisy" (user's rule), even when some noise is measured.
+  for (const s of ['relaxed', 'normal', 'strict'] as const) assert.deepEqual(flags(base({ v: 3, iso: 1250, noise: 3.5, lum: 45 }), s), [], s);
+  assert.deepEqual(flags(base({ v: 3, iso: 1600, noise: 2.6, lum: 45 }), 'relaxed'), [], 'relaxed needs ISO 3200');
   // No camera info: only a genuinely dark, clearly noisy scene.
   assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 50 })), ['noisy']);
   assert.deepEqual(flags(base({ v: 3, noise: 3.5, lum: 120 })), []);
 });
 
-test('washed out: screenshots and white backgrounds are never flagged', () => {
+test('no washed-out label: white backgrounds, products and screenshots are never flagged', () => {
   const white = { lum: 240, std: 30, clipHigh: 0.7, sharp: 900 };
   // Screenshots: in the Screenshots folder, or saved elsewhere with a phone-screen shape and no camera info.
   const inFolder = media(base({ v: 3, ...white }), { bucket: 'Screenshots', path: 'Pictures/Screenshots/', w: 1080, h: 2400 });
@@ -178,8 +181,8 @@ test('washed out: screenshots and white backgrounds are never flagged', () => {
   assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white, text: 'Meeting notes: agenda for Thursday budget review and actions' }))), []);
   // Bright but with real detail (white wall, snow, product on white): spread too wide.
   assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, lum: 232, std: 55, clipHigh: 0.55 }))), []);
-  // Genuinely blown-out camera photo.
-  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }))), ['bright']);
+  // Ring on a white background, shot with the camera: intended, never flagged.
+  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }))), []);
   // A camera photo is still a camera photo even at a screen-like size, because it has ISO.
-  assert.deepEqual(issueFlags(media(base({ v: 3, iso: 50, ...white }), { w: 1080, h: 2340 })), ['bright']);
+  assert.ok(!isScreenshot(media(base({ v: 3, iso: 50, ...white }), { w: 1080, h: 2340 })));
 });
