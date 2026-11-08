@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo as PhotoView } from '../../components/Photo';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -46,7 +46,7 @@ export default function Photo() {
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
         <View style={{ backgroundColor: '#000' }}>
-          <Image source={{ uri: m.uri }} style={{ width: '100%', aspectRatio: m.w && m.h ? Math.max(0.6, Math.min(1.8, m.w / m.h)) : 1 }} contentFit="contain" />
+          <PhotoView uri={m.uri} style={{ width: '100%', aspectRatio: m.w && m.h ? Math.max(0.6, Math.min(1.8, m.w / m.h)) : 1 }} contentFit="contain" />
           {m.type === 'video' ? <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="play-circle" size={64} color="#fff" /></View> : null}
         </View>
         <View style={{ padding: 16, gap: 10 }}>

@@ -186,6 +186,8 @@ function startFaceCheck() {
         await persist.save(ok);
         failures = ok.length ? 0 : failures + 1;
         derive();
+        // Breathe between batches so photo loading on screen stays quick.
+        await new Promise(r => setTimeout(r, 400));
       } catch (e) {
         console.error('Culla faces batch', e);
         failures++;

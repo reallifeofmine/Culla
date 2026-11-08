@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo } from '../../components/Photo';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, useWindowDimensions, View } from 'react-native';
@@ -44,7 +44,7 @@ export default function Albums() {
         return (
           <Pressable onPress={() => router.push({ pathname: '/list/[kind]', params: { kind: a.key } })} style={{ width: `${100 / cols}%`, padding: 4 }}>
             <View style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: c.card, borderWidth: 1, borderColor: c.line }}>
-              {cover ? <Image source={{ uri: cover.uri }} style={{ width: '100%', aspectRatio: 1.2 }} contentFit="cover" recyclingKey={cover.id} /> : <View style={{ aspectRatio: 1.2, backgroundColor: c.raised }} />}
+              {cover ? <Photo uri={cover.uri} style={{ width: '100%', aspectRatio: 1.2 }} contentFit="cover" recyclingKey={cover.id} /> : <View style={{ aspectRatio: 1.2, backgroundColor: c.raised }} />}
               <View style={{ padding: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name={a.icon as any} size={16} color={c.accent} />
                 <Text style={[type.body, { color: c.text, fontWeight: '700', flex: 1 }]} numberOfLines={1}>{a.title}</Text>

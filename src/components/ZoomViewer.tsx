@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo } from './Photo';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView, usePanGesture, usePinchGesture, useSimultaneousGestures, useTapGesture } from 'react-native-gesture-handler';
@@ -64,7 +64,7 @@ function Zoomable({ uri, onSwipe }: { uri: string; onSwipe: (dir: 1 | -1) => voi
     <View style={{ flex: 1, overflow: 'hidden' }}>
       <GestureDetector gesture={gesture}>
         <Animated.View style={{ flex: 1, transform: [{ translateX: tx }, { translateY: ty }, { scale }] }}>
-          <Image source={{ uri }} style={{ flex: 1 }} contentFit="contain" />
+          <Photo uri={uri} style={{ flex: 1 }} contentFit="contain" />
         </Animated.View>
       </GestureDetector>
       <View style={{ position: 'absolute', right: 12, bottom: 12, gap: 10 }}>

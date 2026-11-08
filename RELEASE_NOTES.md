@@ -1,4 +1,3 @@
-- Smarter best pick: in photos of people, Culla now prefers shots where they face the camera and smile, instead of the brightest or most colourful shot
-- Faces that are small in the frame or wearing sunglasses are now recognised and judged
-- Each set shows why its best photo was picked, e.g. "Facing camera · Smiling"
-- Photos in similar sets get a quick one-off re-check in the background to read which way faces are turned
+- Fixed photos showing as blank tiles in similar sets and lists
+- The background face check now runs quietly at low priority, so photos on screen load first
+- If a photo still can't load, Culla retries it and shows a "Couldn't load" note instead of a blank tile

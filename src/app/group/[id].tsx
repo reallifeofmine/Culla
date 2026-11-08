@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo } from '../../components/Photo';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
@@ -69,7 +69,7 @@ export default function GroupReview() {
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 140, gap: 14 }}>
         <Pressable onPress={() => setZoomAt(items.findIndex(m => m.id === hero.id))} accessibilityLabel="Zoom in on this photo"
           style={{ borderRadius: 18, overflow: 'hidden', backgroundColor: c.raised }}>
-          <Image source={{ uri: hero.uri }} style={{ width: '100%', aspectRatio: hero.w && hero.h ? Math.max(0.75, Math.min(1.6, hero.w / hero.h)) : 4 / 3 }} contentFit="contain" />
+          <Photo uri={hero.uri} style={{ width: '100%', aspectRatio: hero.w && hero.h ? Math.max(0.75, Math.min(1.6, hero.w / hero.h)) : 4 / 3 }} contentFit="contain" />
           <View style={{ position: 'absolute', top: 10, left: 10 }}>
             <Pill label={hero.id === best.id ? ['★ Best of this set', ...(best.id === g.best ? bestReasons(best, items) : [])].join(' · ') : heroGone ? 'Will be deleted' : 'Keeping'} tone={hero.id === best.id ? 'good' : heroGone ? 'bad' : 'neutral'} />
           </View>
@@ -92,7 +92,7 @@ export default function GroupReview() {
             return (
               <Pressable key={m.id} onPress={() => setViewing(m.id)} accessibilityLabel={`Show larger. ${gone ? 'Will be deleted' : 'Keeping'}: ${why.join(', ')}`}
                 style={{ width: cell, borderRadius: 12, overflow: 'hidden', borderWidth: 3, borderColor: shown ? c.text : gone ? c.danger : c.accent, backgroundColor: c.raised }}>
-                <Image source={{ uri: m.uri }} style={{ width: '100%', aspectRatio: 1, opacity: gone ? 0.5 : 1 }} contentFit="cover" recyclingKey={m.id} />
+                <Photo uri={m.uri} style={{ width: '100%', aspectRatio: 1, opacity: gone ? 0.5 : 1 }} contentFit="cover" recyclingKey={m.id} />
                 <Pressable onPress={() => toggle(m.id)} hitSlop={10} accessibilityLabel={gone ? 'Keep this photo' : 'Delete this photo'}
                   style={{ position: 'absolute', top: 6, right: 6, width: 30, height: 30, borderRadius: 15, backgroundColor: gone ? c.danger : c.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' }}>
                   <Ionicons name={gone ? 'trash' : 'checkmark'} size={16} color="#fff" />

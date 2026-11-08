@@ -37,7 +37,13 @@ import java.util.concurrent.TimeUnit
  * and exposure. Nothing is uploaded.
  */
 class Analyzer(private val context: Context) {
-  private val workers = Executors.newFixedThreadPool(THREADS)
+  // Low-priority threads so analysis never starves the screen's own photo loading.
+  private val background = java.util.concurrent.ThreadFactory { r ->
+    Thread { android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND); r.run() }
+  }
+  private val workers = Executors.newFixedThreadPool(THREADS, background)
+  // The faces-only re-check runs one photo at a time: it is a quiet top-up, not a first scan.
+  private val faceWorker = Executors.newSingleThreadExecutor(background)
 
   private val faces = FaceDetection.getClient(
     FaceDetectorOptions.Builder()
@@ -203,7 +209,7 @@ class Analyzer(private val context: Context) {
   fun facesBatch(ids: List<String>): List<Map<String, Any?>> {
     val uris = MediaQueries.uris(context, ids)
     val jobs = ids.indices.map { i ->
-      workers.submit(Callable {
+      faceWorker.submit(Callable {
         try {
           mapOf("id" to ids[i], "faces" to detectFaces(uris[i]), "fv" to FACE_VERSION)
         } catch (e: Throwable) {
@@ -211,7 +217,7 @@ class Analyzer(private val context: Context) {
         }
       })
     }
-    return jobs.map { it.get(60, TimeUnit.SECONDS) }
+    return jobs.map { it.get(120, TimeUnit.SECONDS) }
   }
 
   /** Mean eye-area brightness divided by mean face brightness (null if landmarks are missing). */

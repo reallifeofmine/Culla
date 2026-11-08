@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo } from '../components/Photo';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, Text, View } from 'react-native';
@@ -58,7 +58,7 @@ export default function Similar() {
                 const best = id === g.best;
                 return (
                   <View key={id} style={{ flex: 1, aspectRatio: 1, borderRadius: 10, overflow: 'hidden', borderWidth: best ? 3 : 0, borderColor: c.accent }}>
-                    <Image source={{ uri: m.uri }} style={{ flex: 1, opacity: best ? 1 : 0.6 }} contentFit="cover" recyclingKey={id} />
+                    <Photo uri={m.uri} style={{ flex: 1, opacity: best ? 1 : 0.6 }} contentFit="cover" recyclingKey={id} />
                     {best ? <View style={{ position: 'absolute', top: 4, left: 4, backgroundColor: c.accent, borderRadius: 8, paddingHorizontal: 5 }}><Text style={{ color: c.accentText, fontSize: 11, fontWeight: '800' }}>★ Keep</Text></View> : null}
                   </View>
                 );

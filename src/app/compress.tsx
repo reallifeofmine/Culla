@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Photo } from '../components/Photo';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { ActionBar } from '../components/ActionBar';
@@ -89,7 +89,7 @@ export default function Compress() {
         }
         renderItem={({ item: m }) => (
           <View style={{ width: '25%', padding: 2 }}>
-            <Image source={{ uri: m.uri }} style={{ width: '100%', aspectRatio: 1, borderRadius: 6 }} contentFit="cover" recyclingKey={m.id} />
+            <Photo uri={m.uri} style={{ width: '100%', aspectRatio: 1, borderRadius: 6 }} contentFit="cover" recyclingKey={m.id} />
             <Text style={[type.tiny, { color: c.muted }]}>{bytes(m.size)} · {day(m.taken)}</Text>
           </View>
         )}

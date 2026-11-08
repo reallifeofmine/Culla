@@ -59,6 +59,11 @@ Everything runs on the phone; nothing is uploaded.
 - Face check v2 (FACE_VERSION): ML Kit accurate mode on a 1600 px copy, min face 3%, head angles
   (yaw/pitch/roll); px reported in 1024 px-thumbnail units. Photos in similar sets with fv < 2 get a
   faces-only re-check (analyzeFaces) after the main check. Everything else pre-ticked for deletion.
+- Photo display: every gallery image goes through components/Photo (retries at 0.7/2/5 s with a fresh cache
+  key, then shows "Couldn't load · <error>"). User report after build 22: all tiles blank (exact background
+  colour) on device while the emulator was fine; cause most likely the face re-check starving/out-of-memory
+  for the image loader. Analysis threads now run at THREAD_PRIORITY_BACKGROUND, the face re-check on one
+  thread with a 400 ms pause between batches.
 - Scan order: newest first, batches of 6, saved to SQLite (`culla.db`) so nothing is analysed twice.
 
 ## In-app updates

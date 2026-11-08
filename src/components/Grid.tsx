@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { Photo } from './Photo';
 import { router } from 'expo-router';
 import { memo, useCallback } from 'react';
 import { FlatList, Pressable, Text, useWindowDimensions, View, type ListRenderItem } from 'react-native';
@@ -26,7 +26,7 @@ const Cell = memo(function Cell({ item, size, selected, selecting, badges, onTog
       accessibilityRole="imagebutton"
       accessibilityLabel={`${item.type === 'video' ? 'Video' : 'Photo'}${selected ? ', selected' : ''}`}
       style={{ width: size, height: size, padding: 1.5 }}>
-      <Image source={{ uri: item.uri }} style={{ flex: 1, borderRadius: 6, backgroundColor: c.raised, opacity: selected ? 0.55 : 1 }} contentFit="cover" recyclingKey={item.id} transition={120} />
+      <Photo uri={item.uri} style={{ flex: 1, borderRadius: 6, backgroundColor: c.raised, opacity: selected ? 0.55 : 1 }} contentFit="cover" recyclingKey={item.id} transition={120} />
       {item.type === 'video' ? (
         <View style={{ position: 'absolute', bottom: 6, left: 6, flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: c.overlay, borderRadius: 6, paddingHorizontal: 5 }}>
           <Ionicons name="play" size={10} color="#fff" />
