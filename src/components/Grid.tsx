@@ -57,7 +57,8 @@ export function Grid({ items, selected, selecting, onToggle, badges, header, col
   const { width } = useWindowDimensions();
   const cols = columns ?? (width > 700 ? 5 : 3);
   const size = Math.floor(Math.min(width, 900) / cols);
-  const details = useCallback((id: string) => router.push({ pathname: '/photo/[id]', params: { id } }), []);
+  // Videos open in the player; photos in their details page.
+  const details = useCallback((id: string) => router.push({ pathname: items.find(m => m.id === id)?.type === 'video' ? '/video/[id]' : '/photo/[id]', params: { id } }), [items]);
   const open = onOpen ?? details;
   const render: ListRenderItem<Item> = ({ item }) => (
     <Cell item={item} size={size} selected={selected.has(item.id)} selecting={selecting} badges={badges?.(item)} onToggle={onToggle} onOpen={open} tapToView={!!onOpen} />

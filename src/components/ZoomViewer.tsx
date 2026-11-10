@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Photo } from './Photo';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { GestureDetector, GestureHandlerRootView, usePanGesture, usePinchGesture, useSimultaneousGestures, useTapGesture } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Item } from '../lib/store';
@@ -112,6 +113,12 @@ export function ZoomViewer({ items, start, best, removed, onPickBest, onToggle, 
           <Pill label={isBest ? '★ Best' : gone ? 'Will be deleted' : 'Keeping'} tone={isBest || !gone ? 'good' : 'bad'} />
         </View>
         <Zoomable uri={m.uri} onSwipe={go} />
+        {m.type === 'video' ? (
+          <Pressable onPress={() => { onClose(); router.push({ pathname: '/video/[id]', params: { id: m.id } }); }} accessibilityLabel="Play video"
+            style={{ position: 'absolute', alignSelf: 'center', top: '42%', width: 84, height: 84, borderRadius: 42, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="play" size={44} color="#fff" />
+          </Pressable>
+        ) : null}
         <Text style={[type.small, { color: '#bbb', textAlign: 'center', paddingVertical: 6 }]}>Pinch, double-tap or use + / − to zoom · swipe for the next photo</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingBottom: insets.bottom + 16 }}>
           <Pressable onPress={() => go(-1)} disabled={i === 0} accessibilityLabel="Previous photo" style={{ padding: 8, opacity: i === 0 ? 0.3 : 1 }}><Ionicons name="chevron-back" size={28} color="#fff" /></Pressable>

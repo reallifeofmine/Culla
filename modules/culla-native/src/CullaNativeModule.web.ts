@@ -123,6 +123,15 @@ class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { progress:
 
   async readText() { return null; }
 
+  async trimVideo(id: string, startMs: number, endMs: number, taken: number) {
+    await new Promise(r => setTimeout(r, 300));
+    const src = this.items.find(f => f.id === id)!;
+    const clip = { ...src, id: String(Date.now() % 1e9), taken: taken + startMs, duration: endMs - startMs, size: Math.round(src.size * (endMs - startMs) / Math.max(1, src.duration)), bucket: 'Culla', path: 'Movies/Culla/' };
+    this.items.push(clip);
+    (globalThis as any).__trimmed = { id, startMs, endMs };
+    return { id: clip.id, uri: '', duration: clip.duration };
+  }
+
   async trash(ids: string[]) {
     if (!confirm(`Allow Culla to move ${ids.length} items to trash?`)) return false;
     this.bin.push(...this.items.filter(f => ids.includes(f.id)));

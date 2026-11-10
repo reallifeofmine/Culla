@@ -22,6 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="group/[id]" options={{ title: 'Pick what to keep' }} />
         <Stack.Screen name="list/[kind]" options={{ title: '' }} />
         <Stack.Screen name="photo/[id]" options={{ title: '' }} />
+        <Stack.Screen name="video/[id]" options={{ title: '' }} />
         <Stack.Screen name="edit/[id]" options={{ title: 'Edit', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="compress" options={{ title: 'Shrink large photos' }} />
       </Stack>

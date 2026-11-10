@@ -1,3 +1,4 @@
-- Fixed photos showing as blank tiles in similar sets and lists
-- The background face check now runs quietly at low priority, so photos on screen load first
-- If a photo still can't load, Culla retries it and shows a "Couldn't load" note instead of a blank tile
+- Videos now play in Culla: tap any video to open the player
+- Play at 1×, 2×, 5× or 10× speed
+- Seek bar with a strip of frames: drag or tap anywhere to jump to that part
+- Trim: choose the part to keep with two handles (or Start here / End here) and save it as a new short video, keeping or deleting the full one

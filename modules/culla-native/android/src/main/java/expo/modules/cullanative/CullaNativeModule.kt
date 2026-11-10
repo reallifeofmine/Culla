@@ -138,6 +138,10 @@ class CullaNativeModule : Module() {
       background(promise) { ImageOps.compress(context, uris(listOf(id)).first(), maxDim, quality) }
     }
 
+    AsyncFunction("trimVideo") { id: String, startMs: Double, endMs: Double, taken: Double, promise: Promise ->
+      background(promise) { VideoOps.trim(context, uris(listOf(id)).first(), startMs.toLong(), endMs.toLong(), taken.toLong()) }
+    }
+
     AsyncFunction("autoParams") { id: String, promise: Promise ->
       background(promise) { ImageOps.autoParams(context, uris(listOf(id)).first()) }
     }

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Photo as PhotoView } from '../../components/Photo';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { ActionBar } from '../../components/ActionBar';
 import { Button, Empty, Pill } from '../../components/ui';
 import { bytes, day, duration, time } from '../../lib/format';
@@ -47,7 +47,12 @@ export default function Photo() {
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
         <View style={{ backgroundColor: '#000' }}>
           <PhotoView uri={m.uri} style={{ width: '100%', aspectRatio: m.w && m.h ? Math.max(0.6, Math.min(1.8, m.w / m.h)) : 1 }} contentFit="contain" />
-          {m.type === 'video' ? <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="play-circle" size={64} color="#fff" /></View> : null}
+          {m.type === 'video' ? (
+            <Pressable onPress={() => router.push({ pathname: '/video/[id]', params: { id: m.id } })} accessibilityLabel="Play video"
+              style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="play-circle" size={76} color="#fff" />
+            </Pressable>
+          ) : null}
         </View>
         <View style={{ padding: 16, gap: 10 }}>
           {f.length ? <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>{f.map(x => <Pill key={x} label={FLAG_LABEL[x]} tone="warn" />)}</View> : null}

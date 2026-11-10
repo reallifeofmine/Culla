@@ -10,6 +10,8 @@ declare class CullaNativeModule extends NativeModule<{ onUpdateProgress: (e: { p
   /** Faces-only re-check: JSON array of { id, faces, fv } or { id, error }. */
   analyzeFaces(ids: string[]): Promise<string>;
   readText(id: string): Promise<string | null>;
+  /** Saves startMs–endMs of a video as a new video (Movies/Culla); the original is untouched. */
+  trimVideo(id: string, startMs: number, endMs: number, taken: number): Promise<{ id: string; uri: string; duration: number }>;
   /** Shows Android's confirmation; resolves true if the user agreed. */
   trash(ids: string[]): Promise<boolean>;
   restore(ids: string[]): Promise<boolean>;

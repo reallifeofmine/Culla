@@ -20,6 +20,8 @@ for f in tests/fixtures/*.jpg; do adb push "$f" /sdcard/DCIM/Camera/; done
 for f in tests/fixtures/*.jpg; do
   adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/DCIM/Camera/$(basename "$f")" > /dev/null
 done
+adb push tests/fixtures/clip.mp4 /sdcard/DCIM/Camera/clip.mp4
+adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d "file:///sdcard/DCIM/Camera/clip.mp4" > /dev/null
 sleep 8
 adb shell content query --uri content://media/external/images/media --projection _display_name:relative_path > "$OUT/mediastore.txt" || true
 
@@ -46,6 +48,15 @@ for m in re.finditer(r'text="([^"]*)"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]
         a, b, c, d = map(int, m.groups()[1:]); print((a + c) // 2, (b + d) // 2); break
 PY
 }
+tapdesc() { # tap the first element whose accessibility label matches $2 in dump $1
+  python3 - "$OUT/$1.xml" "$2" <<'PY' | { read x y && [ -n "$x" ] && adb shell input tap "$x" "$y"; }
+import sys, re
+x = open(sys.argv[1], encoding='utf-8').read()
+for m in re.finditer(r'content-desc="([^"]*)"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', x):
+    if re.search(sys.argv[2], m.group(1)):
+        a, b, c, d = map(int, m.groups()[1:]); print((a + c) // 2, (b + d) // 2); break
+PY
+}
 
 # Dismiss any system "isn't responding" dialog (tap Wait) and bring Culla back to the front.
 for i in 1 2 3; do
@@ -65,6 +76,22 @@ ui home2; tap home2 '^Albums$'; sleep 4
 adb exec-out screencap -p > "$OUT/4-albums.png"
 ui albums; text albums > "$OUT/4-albums.txt"
 
+# Video: open the test video, play it at 2x, trim a clip and save it as a new video.
+videos() { adb shell content query --uri content://media/external/video/media --projection _id:_display_name:duration:relative_path | tr -d '\r'; }
+videos > "$OUT/videos-before.txt"
+VID=$(grep -o '_id=[0-9]*, _display_name=clip.mp4' "$OUT/videos-before.txt" | head -1 | sed 's/_id=\([0-9]*\).*/\1/')
+adb shell am start -a android.intent.action.VIEW -d "culla://video/$VID" "$PKG" > /dev/null; sleep 8
+ui video0; tapdesc video0 '^Play$'; sleep 4
+ui video1; text video1 > "$OUT/5-video-playing.txt"
+adb exec-out screencap -p > "$OUT/5-video-playing.png"
+tap video1 '^2×$'; sleep 2
+tap video1 '^Trim to a short clip$'; sleep 2
+ui video2; tap video2 '^Save clip$'; sleep 2
+ui video3; tap video3 '^Save clip, keep full video$'; sleep 10
+ui video4; text video4 > "$OUT/6-video-saved.txt"
+adb exec-out screencap -p > "$OUT/6-video-saved.png"
+videos > "$OUT/videos-after.txt"
+
 kill $LOGPID 2>/dev/null; sleep 1
 grep -E "AndroidRuntime|ReactNativeJS|Culla|FATAL|CullaNative|mlkit|mediapipe" "$OUT/logcat-full.txt" | tail -400 > "$OUT/logcat.txt"
 
@@ -73,6 +100,24 @@ echo "---- dashboard ----"; cat "$OUT/1-dashboard.txt"
 echo "---- similar ----"; cat "$OUT/2-similar.txt"
 fail=0
 grep -q "FATAL EXCEPTION" "$OUT/logcat-full.txt" && { echo "App crashed"; fail=1; }
+echo "---- video ----"; head -8 "$OUT/5-video-playing.txt"; grep -i "saved\|couldn" "$OUT/6-video-saved.txt"; cat "$OUT/videos-after.txt"
+[ -n "$VID" ] || { echo "Test video not in the gallery"; fail=1; }
+python3 - "$OUT/video1.xml" <<'PY' || { echo "Video did not play"; fail=1; }
+import sys, re
+x = open(sys.argv[1], encoding='utf-8').read()
+node = next((n for n in re.findall(r'<node [^>]*>', x) if 'content-desc="Position"' in n), '')
+m = re.search(r'text="(\d+):(\d\d)"', node)
+print('position:', m.groups() if m else None)
+sys.exit(0 if m and int(m.group(1)) * 60 + int(m.group(2)) >= 1 else 1)
+PY
+grep -q "Saved a .* clip" "$OUT/6-video-saved.txt" || { echo "Clip was not saved"; fail=1; }
+python3 - "$OUT/videos-after.txt" <<'PY' || { echo "Saved clip missing or wrong length"; fail=1; }
+import sys, re
+rows = [l for l in open(sys.argv[1]) if 'Culla_clip_' in l]
+d = [int(m.group(1)) for l in rows for m in [re.search(r'duration=(\d+)', l)] if m]
+print('clips:', rows, d)
+sys.exit(0 if d and 13000 <= d[0] <= 17000 else 1)
+PY
 grep -q "Culla analyze" "$OUT/logcat.txt" && { echo "Analysis errors in the log"; fail=1; }
 grep -q "^Clean up$" "$OUT/1-dashboard.txt" || { echo "Culla's screen was not visible"; fail=1; }
 grep -qi "couldn.t check\|couldn.t be checked" "$OUT/1-dashboard.txt" && { echo "Check reported an error"; fail=1; }

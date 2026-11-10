@@ -64,6 +64,12 @@ Everything runs on the phone; nothing is uploaded.
   colour) on device while the emulator was fine; cause most likely the face re-check starving/out-of-memory
   for the image loader. Analysis threads now run at THREAD_PRIORITY_BACKGROUND, the face re-check on one
   thread with a 400 ms pause between batches.
+- Video player (src/app/video/[id].tsx, expo-video): no native controls; custom timeline (responder drag,
+  8 frames from generateThumbnailsAsync), speeds 1/2/5/10× (muted above 2×), ±10 s. Trim mode loops the
+  clip; handles or Start here / End here. Save = VideoOps.trim: MediaExtractor → MediaMuxer copy (no
+  re-encode, keeps rotation) from the keyframe at/before the start, to Movies/Culla, DATE_TAKEN = original
+  + start. Choice: keep or delete (system trash) the full video. Emulator smoke plays and trims
+  tests/fixtures/clip.mp4 (40 s, keyframe every 1 s) and checks a 13–17 s Culla_clip_ exists.
 - Scan order: newest first, batches of 6, saved to SQLite (`culla.db`) so nothing is analysed twice.
 
 ## In-app updates
