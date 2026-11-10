@@ -81,10 +81,12 @@ videos() { adb shell content query --uri content://media/external/video/media --
 videos > "$OUT/videos-before.txt"
 VID=$(grep -o '_id=[0-9]*, _display_name=clip.mp4' "$OUT/videos-before.txt" | head -1 | sed 's/_id=\([0-9]*\).*/\1/')
 adb shell am start -a android.intent.action.VIEW -d "culla://video/$VID" "$PKG" > /dev/null; sleep 8
-ui video0; tapdesc video0 '^Play$'; sleep 4
-ui video1; text video1 > "$OUT/5-video-playing.txt"
+# The screen changes constantly while a video plays, so screen dumps are only read while paused.
+ui video0; tapdesc video0 '^Play$'; sleep 5
 adb exec-out screencap -p > "$OUT/5-video-playing.png"
-tap video1 '^2×$'; sleep 2
+tapdesc video0 '^Play$'; sleep 2   # the same spot now pauses
+ui video1; text video1 > "$OUT/5-video-playing.txt"
+tap video1 '^2×$'; sleep 1
 tap video1 '^Trim to a short clip$'; sleep 2
 ui video2; tap video2 '^Save clip$'; sleep 2
 ui video3; tap video3 '^Save clip, keep full video$'; sleep 10

@@ -23,7 +23,7 @@ export default function Video() {
   const nav = useNavigation();
   useEffect(() => { if (m) nav.setOptions({ title: `${day(m.taken)} · ${time(m.taken)}` }); }, [m?.id]);
 
-  const player = useVideoPlayer(m?.uri ?? null, p => { p.timeUpdateEventInterval = 0.1; p.loop = false; });
+  const player = useVideoPlayer(m?.uri ?? null, p => { p.timeUpdateEventInterval = 0.25; p.loop = false; });
   const [now, setNow] = useState(0);
   const [length, setLength] = useState((m?.duration ?? 0) / 1000);
   const [playing, setPlaying] = useState(false);
