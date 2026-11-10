@@ -36,14 +36,28 @@ export default function Video() {
   const [note, setNote] = useState<string | null>(null);
   const clipRef = useRef(clip); clipRef.current = clip;
   const trimRef = useRef(trimming); trimRef.current = trimming;
+  // For recovering from a decoder failure: where we were and whether the user wanted it playing.
+  const pos = useRef(0);
+  const wanted = useRef(false);
+  const recoveries = useRef(0);
 
   useEventListener(player, 'timeUpdate', ({ currentTime }) => {
     // While trimming, play the chosen part on repeat.
     if (trimRef.current && currentTime >= clipRef.current[1]) { player.currentTime = clipRef.current[0]; setNow(clipRef.current[0]); return; }
+    pos.current = currentTime;
     setNow(currentTime);
   });
   useEventListener(player, 'playingChange', ({ isPlaying }) => setPlaying(isPlaying));
-  useEventListener(player, 'statusChange', ({ status }) => {
+  useEventListener(player, 'statusChange', ({ status, error }) => {
+    // A video decoder can fail mid-play (busy phone, many seeks): reload at the same spot and carry on.
+    if (status === 'error' && m && recoveries.current < 5) {
+      recoveries.current++;
+      console.warn('Culla video error, reloading', error?.message);
+      const at = pos.current;
+      player.replaceAsync(m.uri).then(() => { player.currentTime = at; if (wanted.current) player.play(); }).catch(() => {});
+      return;
+    }
+    if (status === 'error') setNote(`This video can't be played${error?.message ? ` (${error.message.slice(0, 120)})` : ''}.`);
     if (status !== 'readyToPlay') return;
     const d = player.duration || (m?.duration ?? 0) / 1000;
     setLength(d);
@@ -63,8 +77,9 @@ export default function Video() {
     player.muted = r > 2;
   };
   const toggle = () => {
-    if (playing) { player.pause(); return; }
+    if (playing) { wanted.current = false; player.pause(); return; }
     if (now >= length - 0.05) seek(trimming ? clip[0] : 0);
+    wanted.current = true;
     player.play();
   };
   const startTrim = () => {
@@ -75,7 +90,7 @@ export default function Video() {
     setTrimming(true); setNote(null);
   };
   const save = async (deleteOriginal: boolean) => {
-    setAsking(false); setBusy(true); player.pause();
+    setAsking(false); setBusy(true); wanted.current = false; player.pause();
     try {
       const out = await Culla.trimVideo(m.id, Math.round(clip[0] * 1000), Math.round(clip[1] * 1000), m.taken);
       await refresh();
@@ -141,13 +156,6 @@ export default function Video() {
               <Text style={[type.body, { color: '#fff', fontWeight: '700' }]} accessibilityLabel="Clip range">
                 Clip {duration(clip[0] * 1000)} – {duration(clip[1] * 1000)} · {duration((clip[1] - clip[0]) * 1000)}
               </Text>
-              <Text style={[type.small, { color: '#bbb' }]}>Drag the two handles on the bar, or move the playhead and tap Start here / End here. The clip plays on repeat so you can check it.</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Button title="Start here" kind="secondary" icon="arrow-forward" style={{ flex: 1 }}
-                  onPress={() => setClip(p => [Math.max(0, Math.min(now, p[1] - MIN_CLIP)), p[1]])} />
-                <Button title="End here" kind="secondary" icon="arrow-back" style={{ flex: 1 }}
-                  onPress={() => setClip(p => [p[0], Math.min(length, Math.max(now, p[0] + MIN_CLIP))])} />
-              </View>
               {asking ? (
                 <View style={{ gap: 8 }}>
                   <Text style={[type.body, { color: '#fff' }]}>Keep the full video too?</Text>
@@ -161,6 +169,13 @@ export default function Video() {
                   <Button title="Save clip" icon="cut" style={{ flex: 1.4 }} busy={busy} onPress={() => setAsking(true)} />
                 </View>
               )}
+              <Text style={[type.small, { color: '#bbb' }]}>Drag the two handles on the bar, or move the playhead and tap Start here / End here. The clip plays on repeat so you can check it.</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Button title="Start here" kind="secondary" icon="arrow-forward" style={{ flex: 1 }}
+                  onPress={() => setClip(p => [Math.max(0, Math.min(now, p[1] - MIN_CLIP)), p[1]])} />
+                <Button title="End here" kind="secondary" icon="arrow-back" style={{ flex: 1 }}
+                  onPress={() => setClip(p => [p[0], Math.min(length, Math.max(now, p[0] + MIN_CLIP))])} />
+              </View>
             </View>
           ) : (
             <Button title="Trim to a short clip" icon="cut" kind="secondary" onPress={startTrim} disabled={length < MIN_CLIP * 2} />

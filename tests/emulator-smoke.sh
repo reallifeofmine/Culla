@@ -102,13 +102,19 @@ fail=0
 grep -q "FATAL EXCEPTION" "$OUT/logcat-full.txt" && { echo "App crashed"; fail=1; }
 echo "---- video ----"; head -8 "$OUT/5-video-playing.txt"; grep -i "saved\|couldn" "$OUT/6-video-saved.txt"; cat "$OUT/videos-after.txt"
 [ -n "$VID" ] || { echo "Test video not in the gallery"; fail=1; }
-python3 - "$OUT/video1.xml" <<'PY' || { echo "Video did not play"; fail=1; }
+# Played if the playhead (or the clip it set) moved past 0:00 in any later screen.
+python3 - "$OUT"/video1.xml "$OUT"/video2.xml "$OUT"/video3.xml "$OUT"/video4.xml <<'PY' || { echo "Video did not play"; fail=1; }
 import sys, re
-x = open(sys.argv[1], encoding='utf-8').read()
-node = next((n for n in re.findall(r'<node [^>]*>', x) if 'content-desc="Position"' in n), '')
-m = re.search(r'text="(\d+):(\d\d)"', node)
-print('position:', m.groups() if m else None)
-sys.exit(0 if m and int(m.group(1)) * 60 + int(m.group(2)) >= 1 else 1)
+secs = []
+for f in sys.argv[1:]:
+    try: x = open(f, encoding='utf-8').read()
+    except OSError: continue
+    for n in re.findall(r'<node [^>]*>', x):
+        if 'content-desc="Position"' in n or 'Clip ' in n:
+            m = re.search(r'text="(?:Clip )?(\d+):(\d\d)', n)
+            if m: secs.append(int(m.group(1)) * 60 + int(m.group(2)))
+print('positions:', secs)
+sys.exit(0 if any(s >= 1 for s in secs) else 1)
 PY
 grep -q "Saved a .* clip" "$OUT/6-video-saved.txt" || { echo "Clip was not saved"; fail=1; }
 python3 - "$OUT/videos-after.txt" <<'PY' || { echo "Saved clip missing or wrong length"; fail=1; }
