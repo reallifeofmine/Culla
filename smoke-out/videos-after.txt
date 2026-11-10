@@ -1,0 +1,2 @@
+Row: 0 _id=1000000029, _display_name=clip.mp4, duration=40023, relative_path=DCIM/Camera/
+Row: 1 _id=1000000032, _display_name=Culla_clip_1794276637510.mp4, duration=15503, relative_path=Movies/Culla/

@@ -1,0 +1,1 @@
+Row: 0 _id=1000000029, _display_name=clip.mp4, duration=40023, relative_path=DCIM/Camera/

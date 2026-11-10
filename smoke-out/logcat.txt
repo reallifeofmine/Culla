@@ -1,0 +1,104 @@
+11-10 02:08:08.394 D/AndroidRuntime( 5882): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:08:08.397 I/AndroidRuntime( 5882): Using default boot image
+11-10 02:08:08.398 I/AndroidRuntime( 5882): Leaving lock profiling enabled
+11-10 02:08:08.515 D/AndroidRuntime( 5882): Calling main entry com.android.commands.monkey.Monkey
+11-10 02:08:08.695 I/AndroidRuntime( 5882): VM exiting with result code 0.
+11-10 02:08:09.637 I/ReactNativeJS( 5904): Running "main"
+11-10 02:08:10.157 I/DynamiteModule( 5904): Considering local module com.google.mlkit.dynamite.face:10000 and remote module com.google.mlkit.dynamite.face:0
+11-10 02:08:10.157 I/DynamiteModule( 5904): Selected local version of com.google.mlkit.dynamite.face
+11-10 02:08:10.955 I/DynamiteModule( 5904): Considering local module com.google.mlkit.dynamite.text.latin:10000 and remote module com.google.mlkit.dynamite.text.latin:0
+11-10 02:08:10.963 I/DynamiteModule( 5904): Selected local version of com.google.mlkit.dynamite.text.latin
+11-10 02:08:11.303 E/native  ( 5904): E0000 00:00:1794276491.303287    5978 proto_data_store.cc:36] Could not open file /data/user/0/com.reallifeofmine.culla/files/com.google.mlkit.acceleration/com.google.perception.acceleration_analytics_storage_v2.: No such file or directory
+11-10 02:08:12.507 I/Culla   ( 5904): analysed content://media/external/images/media/1000000020 sharp=383.8798860214438 noise=0.1694295037482065 iso=null hash=5e3746c64f654854 emb=1368 faces=1 labels=8
+11-10 02:08:12.562 I/Culla   ( 5904): analysed content://media/external/images/media/1000000019 sharp=384.1188421714385 noise=0.20053026197048002 iso=null hash=75334e464d634c50 emb=1368 faces=1 labels=7
+11-10 02:08:12.971 I/Culla   ( 5904): analysed content://media/external/images/media/1000000021 sharp=7.300538957748105 noise=0.03110075822227352 iso=null hash=de335cc64f6e4c68 emb=1368 faces=1 labels=7
+11-10 02:08:13.208 I/Culla   ( 5904): analysed content://media/external/images/media/1000000022 sharp=385.7547566483524 noise=0.11604760530699075 iso=null hash=de3554464e6e4868 emb=1368 faces=1 labels=7
+11-10 02:08:13.508 I/Culla   ( 5904): analysed content://media/external/images/media/1000000023 sharp=80.31340590201104 noise=0.27572911020941004 iso=null hash=8e122debb6a5dfcd emb=1368 faces=0 labels=6
+11-10 02:08:13.662 I/Culla   ( 5904): analysed content://media/external/images/media/1000000024 sharp=449.85942533301767 noise=0.2794426335792337 iso=null hash=1acd6b8f29626210 emb=1368 faces=0 labels=9
+11-10 02:08:14.214 I/Culla   ( 5904): analysed content://media/external/images/media/1000000025 sharp=2.0282927273313422 noise=0.01717504558543463 iso=null hash=8e122deba6a5578d emb=1368 faces=0 labels=4
+11-10 02:08:14.582 I/Culla   ( 5904): analysed content://media/external/images/media/1000000026 sharp=1127.5720354992004 noise=0.6366371627141513 iso=null hash=1a85ab8d29626a11 emb=1368 faces=0 labels=8
+11-10 02:08:14.740 I/Culla   ( 5904): analysed content://media/external/images/media/1000000027 sharp=0.1708192118113529 noise=0.0 iso=null hash=0000008080808080 emb=1368 faces=0 labels=3
+11-10 02:08:15.243 I/Culla   ( 5904): analysed content://media/external/images/media/1000000028 sharp=280.63608632820626 noise=0.07194951529033426 iso=null hash=f4f2f6f6f6f2fcf8 emb=1368 faces=0 labels=3
+11-10 02:08:16.652 I/ChimeraConfigurator( 5644): Starting update, reason: 4 urgentFeatures: mlkit.barcode.ui:0
+11-10 02:08:16.662 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [mlkit.barcode.ui]. Pending module sets: container:2318189190800+mlkit.barcode.ui+vision.barcode,tflite_dynamite:2640104055100800+tflite_dynamite
+11-10 02:08:16.668 W/ZappDownloader( 5644): No successful module downloads for requested features [mlkit.barcode.ui].
+11-10 02:08:16.707 I/GmsDebugLogger( 5644): [83] 1 [mlkit.barcode.ui]
+11-10 02:08:17.215 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:08:27.351 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:08:48.712 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:09:07.824 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:09:07.884 I/ChimeraConfigurator( 5644): Starting update, reason: 4 urgentFeatures: mlkit.barcode.ui:0
+11-10 02:09:07.891 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [mlkit.barcode.ui]. Pending module sets: container:2318189190800+mlkit.barcode.ui+vision.barcode,tflite_dynamite:2640104055100800+tflite_dynamite
+11-10 02:09:07.896 W/ZappDownloader( 5644): No successful module downloads for requested features [mlkit.barcode.ui].
+11-10 02:09:07.926 I/GmsDebugLogger( 5644): [83] 1 [mlkit.barcode.ui]
+11-10 02:09:08.192 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:09:25.426 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:09:38.852 D/AndroidRuntime( 6399): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:09:38.864 I/AndroidRuntime( 6399): Using default boot image
+11-10 02:09:38.864 I/AndroidRuntime( 6399): Leaving lock profiling enabled
+11-10 02:09:38.984 D/AndroidRuntime( 6399): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:09:40.081 D/AndroidRuntime( 6399): Shutting down VM
+11-10 02:09:41.186 D/AndroidRuntime( 6426): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:09:41.189 I/AndroidRuntime( 6426): Using default boot image
+11-10 02:09:41.189 I/AndroidRuntime( 6426): Leaving lock profiling enabled
+11-10 02:09:41.264 D/AndroidRuntime( 6426): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:09:42.344 D/AndroidRuntime( 6426): Shutting down VM
+11-10 02:09:47.653 D/AndroidRuntime( 6461): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:09:47.656 I/AndroidRuntime( 6461): Using default boot image
+11-10 02:09:47.656 I/AndroidRuntime( 6461): Leaving lock profiling enabled
+11-10 02:09:47.724 D/AndroidRuntime( 6461): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:09:48.784 D/AndroidRuntime( 6461): Shutting down VM
+11-10 02:09:49.932 I/ChimeraConfigurator( 5644): Detected pending changes for urgent request: [vision.ocr]. Pending module sets: container:2318189190800+mlkit.ocr.common,tflite_dynamite:2640104055100800+tflite_dynamite,vision_ocr:2316024025100000+vision.ocr
+11-10 02:09:54.286 D/AndroidRuntime( 6503): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:09:54.289 I/AndroidRuntime( 6503): Using default boot image
+11-10 02:09:54.289 I/AndroidRuntime( 6503): Leaving lock profiling enabled
+11-10 02:09:54.361 D/AndroidRuntime( 6503): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:09:55.401 D/AndroidRuntime( 6503): Shutting down VM
+11-10 02:09:59.344 D/AndroidRuntime( 6530): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:09:59.347 I/AndroidRuntime( 6530): Using default boot image
+11-10 02:09:59.347 I/AndroidRuntime( 6530): Leaving lock profiling enabled
+11-10 02:09:59.409 D/AndroidRuntime( 6530): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:00.482 D/AndroidRuntime( 6530): Shutting down VM
+11-10 02:10:05.856 D/AndroidRuntime( 6566): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:05.859 I/AndroidRuntime( 6566): Using default boot image
+11-10 02:10:05.859 I/AndroidRuntime( 6566): Leaving lock profiling enabled
+11-10 02:10:05.919 D/AndroidRuntime( 6566): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:06.984 D/AndroidRuntime( 6566): Shutting down VM
+11-10 02:10:07.883 D/AndroidRuntime( 6583): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:07.885 I/AndroidRuntime( 6583): Using default boot image
+11-10 02:10:07.885 I/AndroidRuntime( 6583): Leaving lock profiling enabled
+11-10 02:10:07.944 D/AndroidRuntime( 6583): Calling main entry com.android.commands.content.Content
+11-10 02:10:07.949 D/AndroidRuntime( 6583): Shutting down VM
+11-10 02:10:16.871 D/AndroidRuntime( 6844): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:16.873 I/AndroidRuntime( 6844): Using default boot image
+11-10 02:10:16.873 I/AndroidRuntime( 6844): Leaving lock profiling enabled
+11-10 02:10:16.932 D/AndroidRuntime( 6844): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:17.958 D/AndroidRuntime( 6844): Shutting down VM
+11-10 02:10:26.360 D/AndroidRuntime( 6888): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:26.363 I/AndroidRuntime( 6888): Using default boot image
+11-10 02:10:26.363 I/AndroidRuntime( 6888): Leaving lock profiling enabled
+11-10 02:10:26.428 D/AndroidRuntime( 6888): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:27.497 D/AndroidRuntime( 6888): Shutting down VM
+11-10 02:10:31.451 D/AndroidRuntime( 6918): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:31.454 I/AndroidRuntime( 6918): Using default boot image
+11-10 02:10:31.454 I/AndroidRuntime( 6918): Leaving lock profiling enabled
+11-10 02:10:31.515 D/AndroidRuntime( 6918): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:32.578 D/AndroidRuntime( 6918): Shutting down VM
+11-10 02:10:35.505 D/AndroidRuntime( 6942): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:35.508 I/AndroidRuntime( 6942): Using default boot image
+11-10 02:10:35.508 I/AndroidRuntime( 6942): Leaving lock profiling enabled
+11-10 02:10:35.578 D/AndroidRuntime( 6942): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:36.642 D/AndroidRuntime( 6942): Shutting down VM
+11-10 02:10:37.517 I/MediaProvider( 1576): Open with lower FS for /storage/emulated/0/Movies/Culla/.pending-1794881437-Culla_clip_1794276637510.mp4. Uid: 10192
+11-10 02:10:37.722 D/MediaProvider( 1576): Moving /storage/emulated/0/Movies/Culla/.pending-1794881437-Culla_clip_1794276637510.mp4 to /storage/emulated/0/Movies/Culla/Culla_clip_1794276637510.mp4
+11-10 02:10:37.743 I/Culla   ( 5904): clip saved content://media/external_primary/video/media/1000000032 from content://media/external/video/media/1000000029 5501-20501 ms, 15480 ms long
+11-10 02:10:47.547 D/AndroidRuntime( 6971): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:47.550 I/AndroidRuntime( 6971): Using default boot image
+11-10 02:10:47.550 I/AndroidRuntime( 6971): Leaving lock profiling enabled
+11-10 02:10:47.603 D/AndroidRuntime( 6971): Calling main entry com.android.commands.uiautomator.Launcher
+11-10 02:10:48.635 D/AndroidRuntime( 6971): Shutting down VM
+11-10 02:10:49.758 D/AndroidRuntime( 6993): >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-10 02:10:49.761 I/AndroidRuntime( 6993): Using default boot image
+11-10 02:10:49.761 I/AndroidRuntime( 6993): Leaving lock profiling enabled
+11-10 02:10:49.819 D/AndroidRuntime( 6993): Calling main entry com.android.commands.content.Content
+11-10 02:10:49.828 D/AndroidRuntime( 6993): Shutting down VM
